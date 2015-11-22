@@ -1,0 +1,439 @@
+% -*- Mode: LaTeX -*-
+% $Id: Mesh.tex,v 1.11 1995/05/12 20:43:05 chew Exp $
+
+\chapter{Meshing}
+\label{Mesh:Chap}
+
+Weyl provides for the creation and manipulation of unstructured
+(triangular) meshes.  Currently, these facilities are limited to
+2-dimensional (flat) meshes, but we plan to add facilities for meshing
+curved surfaces (embedded in 3-dimensions) in the near future.  A
+desirable feature of the meshing technique used by Weyl is that the
+resulting meshes are mathematically guaranteed to exhibit the
+following properties: 
+\begin{itemize}
+
+\item 
+Boundaries, both external and internal, are respected.  
+
+\item 
+Element shapes are guaranteed.  All elements are triangles with angles
+between 30 and 120 degrees (with the exception of badly shaped
+elements that may be required by the specified boundary).
+
+\item
+Element density can be controlled, producing small elements in
+``interesting'' areas and large elements elsewhere.
+\end{itemize}
+
+A mesh is implemented as a simplicial-complex with some additional
+information attached.  This additional information includes a
+subsidiary simplicial-complex representing the boundary.  Both
+external boundaries and internal boundaries are supported.  Internal
+boundaries are used, for instance, when analyzing an object made out
+of more than one material or when analyzing cracks.
+
+The desired shapes for the triangles of the mesh are specified by
+giving angle-bounds for the minimum and maximum angles that are
+allowed to appear in the mesh.
+
+The mesh density is controlled by specifying a size-list.  Basically,
+this is a simple (flattened) table associating names with sizes where
+a size can be either a simple number (used as an upper bound on the
+size) or a function of two numerical arguments that returns a number.
+Both boundaries and subregions can have names that appear in a
+size-list.
+
+\section{Creating and Storing Meshes}
+\label{CreateMesh:Sec}
+
+Meshes are created by using \keylisp{make-mesh}, by using
+\keylisp{make-mesh-from-file}, or by using individual meshing
+functions as 
+described below in \sectref{MeshingFunctions:Sec}.  Meshes can be
+stored in a file by using \keylisp{write-mesh}.  The format of the
+resulting file is described in \sectref{MeshFF:Sec}.
+
+The two simplest ways to create a mesh are to use either
+\keylisp{make-mesh} or \keylisp{make-mesh-from-file}.  {\sf Make-mesh}
+provides syntactic sugar to make it easy to specify a mesh from within
+a program.  {\sf Make-mesh-from-file} controls mesh creation via a
+data file; the file's format is specified in \sectref{MeshFF:Sec}.
+{\sf Make-mesh} is somewhat more versatile since it allows size bounds
+that are functions while the data-file format allows only size bounds
+that are numeric constants.  Note though that size bounds in the data
+file can be overridden by size bounds specified in the call to
+\keylisp{make-mesh-from-file}; thus, size bounds that are functions
+can overrride the constant bounds in the file.
+
+\begin{macrodef}{make-mesh}{\rm ({\em space} \key {\em angle-bounds
+size-list}) . {\em boundary-and-region-specs}} 
+Use the boundary and region specifcations to create a mesh in which the
+elements satisfy the the requirements given by {\em angle-bounds} and
+{\em size-list\/}.  
+\end{macrodef}
+
+The {\em angle-bounds} represent the minimum and maximum angles
+allowed in the triangles of the mesh (note though that smaller angles
+can occur in the final mesh if the specified boundary includes small
+angles).  If {\em angle-bounds} are unspecified then the default
+bounds are used; the default bounds lead to meshes in which all angles
+are between $30\degree$ and $120\degree$.  If given, the {\em
+angle-bounds} can be either a 2, 1, or 0 element list.  Each of the
+elements in {\em angle-bounds} is an integer specifying an angle in
+degrees.  If 2 elements are specified then the first is the lower
+bound and the second is the upper bound.  If just one element is given
+then this is the lower bound (note that this implies an upper bound of
+$180\degree$ minus twice the lower bound).  If an empty list is given
+then triangles are not checked for shape.  Looser bounds produce
+meshes with fewer triangles.  If tighter bounds are used (tighter than
+the default bounds) then there are 3 possible outcomes depending on
+the problem:
+\begin{enumerate}
+\item the result can be a high-quality mesh satisfying the given
+bounds, 
+\item the result can be a mesh satisfying the given bounds, but it includes some small elements
+in arbitrary places, or 
+\item the meshing algorithm can fail to halt.
+\end{enumerate}
+An upper bound below about $100\degree$ is likely to lead to a failure
+to halt.
+
+The {\em size-list}, if provided, is an alternating list of names and
+{\em size-bounds}.  Each name should correspond to the name of either a
+boundary-edge or a region.  A {\em size-bound} is either a number or a
+function of two numeric arguments that will produce a number.  The
+size-bound following a name determines the maximum edge length that
+will be allowed either along the boundary with that name or within the
+region of that name.  In other words, a triangle (or a boundary-edge)
+is replaced with smaller triangles (boundary-edges) if its size is
+greater than the corresponding size-bound.  When the size-bound is a
+function it is evaluated at the mean of the triangle's
+(boundary-edge's) vertices.
+
+The boundary and region specs are a list of specialized elements each
+of which is a list starting with an identifier.  Currently, there are
+three types of elements that can appear in the boundary and region
+specs; the corresponding identifiers for these elements are: \keylisp{point},
+\keylisp{region}, and \keylisp{boundary}.  The formats for these
+elements are given below.  They have the following meanings only within
+the scope of a \keylisp{make-mesh} form.
+
+\begin{specialdef}{point}{name coord$_1$ \ldots\ coord$_k$}
+Creates a named point that can be used (by name) in later \keylisp{boundary}
+elements.  The number of coordinates must match the dimension of the
+embedding {\em space} specified as the first argument to \keylisp{make-mesh}.
+\end{specialdef}
+
+\begin{specialdef}{region}{name coord$_1$ \ldots\ coord$_k$}
+Specify a region to be meshed and give it a name.  The boundaries
+(given by \keylisp{boundary} elements) divide the embedding {\em
+space} (i.e., the first argument to \keylisp{make-mesh}) into one or
+more regions.  A region-to-be-meshed is specified (and named) here by
+giving a point within that region.  During the meshing process, all
+triangles within this region have this same name.
+\end{specialdef}
+
+\begin{specialdef}{boundary}{name {
+\rm (\key ({\em closed?} {\sf nil}) ({\em split} 0))} type . description}
+Insert a boundary into the mesh.  Each segment of the boundary is
+given the specified name.  At the moment, there are just two types
+that can appear: {\sf LINE} and {\sf ARC}.  The description formats
+for these two types are given below.  If {\sf :closed?} is non-null
+then, in effect, the description is made to end at the same place it
+started.  If {\sf :split} is an integer greater than zero then each
+segment of the boundary is recursively split that number of times
+before it is inserted in the mesh.  This can be used, for instance, to
+make the initial region have a shape closer to the actual region.
+\end{specialdef}
+
+Care must be taken when an object (a hole for instance) is near a
+curved boundary.  This is because all segments, even curved ones, are
+represented as straight lines during the meshing process.  (Note
+though that when a curved segment is split, the splitting point is
+correctly placed on the curved path of the segment.)  Curved segments
+that are not split into enough pieces can misbehave in the sense that
+a nearby object can appear to intersect the segment or even to be on
+the wrong side of the segment.
+
+For {\sf LINE}, an arbitrary number of points can follow {\sf LINE} where
+each point is specified as either a name (that appeared earlier in a
+{\sf point} element) or a list of the form {\sf (PT coord$_1$ $\ldots$ coord$_k$)}.  The
+boundary is formed by straight lines between adjacent points.
+
+As an example, meshing of a simple square can be accomplished by the
+following use of \keylisp{make-mesh}.  It produces a mesh with small
+triangles in the interior of the square with slightly smaller
+triangles along the boundary.
+
+\begin{code}
+(make-mesh ((get-euclidean-space 2) :size-list '(inside .2 edges .1))
+                                    :angle-bounds '(10 120)) 
+  (point origin 0 0) 
+  (region inside 0.5 0.5)
+  (boundary edges (:closed? T) line
+    origin (pt 1 0) (pt 1 1) (pt 0 1)))
+\end{code}
+
+For {\sf ARC}, the description is an alternating list of points and
+arc options.  The points are specified as described for {\sf LINE}.
+The arc options are lists of keyword arguments.  The valid keywords
+are {\sf :center}, {\sf :thru}, {\sf :radius}, {\sf :clockwise} (or
+{\sf :cw}), and {\sf :counterclockwise} (or {\sf :ccw}).  Only one of
+{\sf :center}, {\sf :thru}, or {\sf :radius} should be specified.
+Also, at most one of {\sf :cw} or {\sf :ccw} should be given.  The arc
+options and the two adjacent points (call them $a$ and $b$) determine
+a circle where $a$ and $b$ are both on the circle.  For each such
+circle there are two arcs between $a$ and $b$.  The one chosen is the
+one that has the specified direction (either clockwise or
+counterclockwise) going from $a$ to $b$; the default direction is
+counterclockwise.  The different kinds of specifications are described
+below.  In each instance that calls for a point, the point is either a
+name or a list of the form {\sf (PT $\ldots$)} as described for {\sf
+LINE}
+\begin{itemize}
+\item {\sf ()}.
+If an empty list is used for the arc options this results in a
+straight line between the two adjacent points.
+\item {\sf (:center point)}.
+The circle chosen is the one through the two adjacent points that has
+the given center.  Note that it is possible, although very
+undesirable, to specify an invalid center --- one that is not
+equidistant from $a$ and $b$.
+\item {\sf (:thru point)}.
+The circle chosen is the one through the two adjacent points ($a$ and
+$b$) and through the specified thru-point.
+\item {\sf (:radius number)}.
+The circle chosen is one of the two circles through $a$ and $b$ that
+have the given radius.  If {\sf number} is positive then the circle
+chosen is the one to the left of the vector from $a$ to $b$.  A
+negatvie {\sf number} indicates the other circle.  If the radius is
+too small (e.g., zero, for instance) then the circle with $a$ and $b$
+on the diameter is used.  In this case, a warning message is printed
+except when {\sf number} is exactly zero.
+\end{itemize}
+
+As an example, a circle can be meshed by using the following code.
+
+\begin{code}
+(make-mesh ((get-euclidean-space 2) :size-list '(inside .4 outside .2))
+  (point origin 0 0)
+  (region inside 0 0)
+  (boundary outside (:closed? t :split 3) arc
+    (pt 1 0) (:center origin) (pt -1 0) (:center origin)))
+\end{code}
+
+
+\begin{functiondef}{make-mesh-from-file}{stream
+\key angle-bounds size-list}
+Create a mesh using data from a Lisp input stream.  
+The file's format is specified
+in \sectref{MeshFF:Sec}.  The angle-bounds and size-list can be
+specified in the file, but the file versions are overridden if the
+keywords are used.  See the text following the description of {\sf
+make-mesh} for how to use the {\em angle-bounds} and {\em size-list} keywords.
+\end{functiondef}
+
+\begin{functiondef}{write-mesh}{mesh stream}
+Write the given mesh to a Lisp output stream.  
+The format of
+the resulting file is described in \sectref{MeshFF:Sec}.
+\end{functiondef}
+
+Assuming that the file meshRequest contains data in the proper format,
+the following instructions would create a mesh and write it out to the
+the file newMesh.
+
+\begin{code}
+(let ((mesh nil))
+  (with-open-file (in-file "meshRequest" :direction :input)
+    (setf mesh (make-mesh-from-file in-file)))
+  (with-open-file (out-file "newMesh" :direction :output)
+    (write-mesh mesh out-file)))
+\end{code}
+
+\section{Access to Portions of a Mesh}
+
+The following functions are useful for examining an existing mesh.
+
+\begin{functiondef}{boundary-complex-of}{mesh}
+Return the simplicial-complex that holds the boundaries (internal and
+external) of the mesh.
+\end{functiondef}
+
+\begin{functiondef}{home-of}{mesh}
+Return the embedding {\em space} of the mesh (\ie, the first argument
+to \keylisp{make-mesh}).
+\end{functiondef}
+
+\begin{functiondef}{all-names}{simplicial-complex}
+Return a list of the different names that appear in the given
+simplicial complex.
+(Boundaries and regions of a mesh can have names; the names are used
+in size-lists to allow control of mesh density.)
+\end{functiondef}
+
+In the example below, the first use of {\keylisp all-names} reports
+all the names for boundaries of the mesh.  The second use reports all
+the names for subregions of the mesh.
+
+\begin{code}
+(all-names (boundary-complex-of mesh))
+(all-names mesh)
+\end{code}
+
+Another routine that is often useful when working with meshes is
+\keylisp{map-over-cells}.  One common use of \keylisp{map-over-cells}
+is to map over all triangles of a mesh or over all boundaries of a
+mesh.
+\begin{code}
+(map-over-cells (triangle 2) mesh
+   (print triangle))
+\end{code}
+
+\begin{code}
+(map-over-cells (b-segment 1) (boundary-complex-of mesh)
+   (print b-segment))
+\end{code}
+
+{\sf Map-over-cells} can also be used to map over all edges of a mesh
+or to map over all vertices of a mesh.  Note that {\sf (first
+(vertices-of vertex))} is used in the second example since {\sf
+vertex} is a $0$-dimensional simplex.
+\begin{code}
+(map-over-cells (edge 1) mesh
+   (print edge))
+
+(map-over-cells (vertex 0) mesh
+   (print (first (vertices-of vertex))))
+\end{code}
+
+
+\subsection{Individual Components of a Mesh}
+
+The following functions are useful for examining a single component of
+a mesh (\eg, a single triangle or a single boundary-edge).  Note that
+several of these functions apply to simplices; thus they can be used
+on both triangles (2-simplices) and boundary edges (1-simplices).
+
+\begin{functiondef}{locate}{point mesh}
+Return a triangle of the given mesh that has the given point in its
+interior or on its boundary.  The point must be a point in the
+embedding space of the mesh.
+\end{functiondef}
+
+As an example, the following code will find the triangle of mesh {\sf
+my-mesh} that contains the origin.
+
+\begin{code}
+(locate (make-point (home-of my-mesh) 0 0) my-mesh)
+\end{code}
+
+\begin{functiondef}{name}{simplex simplicial-complex}
+Return the name of the given simplex.  Used to determine names of
+triangles and boundary-edges.
+\end{functiondef}
+
+\begin{methoddef}{vertices-of}{simplex}
+Return a list of the vertices of the given simplex.  Each vertex is a
+point in the embedding space of the mesh.  
+Used to find the vertices of a triangle
+or to find the endpoints of a boundary-edge.
+\end{methoddef}
+
+\begin{functiondef}{angles}{triangle}
+Return a list of the given triangle's angles in degrees.
+\end{functiondef}
+
+\begin{functiondef}{simplex-size}{simplex}
+Return the length of the longest side of the given simplex.  For
+example, this gives the length of the longest side of a mesh-triangle
+or the length of a boundary-edge.
+\end{functiondef}
+
+
+\section{Individual Meshing Functions}
+\label{MeshingFunctions:Sec}
+
+This section describes the direct programming interface to the mesher.
+In particular, it describes the functions \keylisp{read-mesh} and
+\keylisp{refine-mesh} that allow a user to refine an existing mesh.
+It is 
+unlikely that a casual user will need the remaining functions unless
+the user plans to control the meshing process from within a program.
+(One might wish to do this for use with adaptive remeshing, for
+instance.)
+
+\begin{functiondef}{read-mesh}{stream}
+Read an existing mesh from a Lisp input stream.  The file format is
+described in \sectref{MeshFF:Sec}.  This function can read a mesh that
+was written to a file by \keylisp{write-mesh}.
+\end{functiondef}
+
+The following function can refine an existing mesh.  See the text
+following the description of \keylisp{make-mesh} for how to use the
+keywords angle-bounds and size-list.
+
+\begin{functiondef}{refine-mesh}{mesh \key angle-bounds size-list}
+Refine an existing mesh using the specified {\em angle-bounds} and
+{\em size-list}.
+\end{functiondef}
+
+As an example, the following code will read an existing mesh from a
+file, refine it (presumabley the size requested is smaller than when
+the initial mesh was created), and write the mesh to another file.
+
+\begin{code}
+(let ((mesh nil))
+  (with-open-file (in-file "oldMesh" :direction :input)
+    (setf mesh (read-mesh in-file)))
+  (refine-mesh mesh :size-list '(inside .1))
+  (with-open-file (out-file "newMesh" :direction :output)
+    (write-mesh mesh out-file)))
+\end{code}
+
+An empty mesh can be created using the following function.
+
+\begin{functiondef}{create-mesh}{space}
+Create an empty mesh in the given space.  Typically, the space is
+Euclidean $2$-space.
+\end{functiondef}
+
+\begin{methoddef}{insert-boundary}{simplex mesh \key name}
+Insert a 0-dimensional or a 1-dimensional simplex into a mesh as a
+boundary.  A 0-dimensional simplex corresponds to a vertex that cannot
+be removed from the mesh.  A 1-dimensional simplex (a boundary
+segment) also cannot be removed, but can be split during the meshing
+process.  The name, if specified, can be used within a size-table in a
+keyword argument to {\sf refine-mesh}.
+\end{methoddef}
+
+\begin{functiondef}{name-region}{name point mesh}
+Give a name to the enclosed (by boundaries) region of the mesh that
+contains the given point.  Regions that are not named are eliminated
+from the mesh (in \keylisp{refine-mesh}) before mesh refinement begins.
+\end{functiondef}
+
+Note that the initial triangulation of the mesh is accomplished during
+the first call to \keylisp{name-region}.  Thus, this is when crossed
+boundary-edges are detected.
+
+The function \keylisp{make-curved-segment} can be used to create a
+curved (parametric) boundary that can be inserted into a mesh using
+\keylisp{insert-boundary}.  Note that straight-line boundary segments
+are created using \keylisp{make-simplex} (see
+\sectref{AlgebraicTopology:Sec}).
+
+\begin{functiondef}{make-curved-segment} {space param-a end-a param-b end-b generator} 
+Return 1-simplex that is a parametric curve.  The {\em generator} must
+be a function that takes a number (a parameter value) and returns an
+element of {\em space}.  {\em End-a} and {\em end-b} are the endpoints
+of the segment; {\em param-a} and {\em param-b} represent the
+corresponding parameter values.  Knowing the parameter values for the
+endpoints and knowing the generator, we can, of course, generate
+endpoints, but these would be new endpoints and would thus not link
+properly with adjacent curves.  Requiring the specifiation of {\em
+end-a} and {\em end-b} alleviates this problem.  The user is reponsibe
+for ensuring that the parameter values and the endpoints agree.
+\end{functiondef}
+

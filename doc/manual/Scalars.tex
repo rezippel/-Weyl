@@ -1,0 +1,566 @@
+% -*- Mode: LaTeX -*-
+% $Id: Scalars.tex,v 1.3 1995/03/31 15:31:17 rz Exp $
+\chapter{Scalar Domains}
+\label{Scalar:Chap}
+
+Almost all domains that occur in mathematics can be constructed from
+the rational integers, $\Z$.  For instance, the the rational numbers
+($\Q$) are the quotient field of $\Z$, the real numbers are completion
+of $\Q$ using the valuations at infinity and so on.  For performance
+reasons provides direct implementations of four basic scalar
+domains, the rational integers ($\Z$), the rational numbers ($\Q$), the
+real numbers ($\R$) and the complex numbers ($\C$).  In addition, a
+similar direct implementation of finite fields is also provided.
+These scalar domains are called {\em numeric domains}, and the
+corresponding domain hierarchy is given in \figref{NumberDomains:Fig}.
+Instances of the {\sf GFp} class are finite fields of $p$ elements.
+(These are parameterized domains.)  The {\sf GFq} class is used to
+implement fields of $q= p^r$ elements.  The class {\sf GFm} is
+discussed in more detail in \sectref{Finite:Fields:Sec}.
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{NumberDomains.eps scaled 500}
+\end{center}
+\caption{Mathematical Scalar Domains\label{NumberDomains:Fig}}
+\end{figure}
+
+Instances of the characteristic zero domains may be created using the
+functions \keylisp{get-rational-integers},
+\keylisp{get-rational-numbers}, \keylisp{get-real-numbers} and
+\keylisp{get-complex-numbers}.  To create finite fields one can use
+the function \keylisp{get-finite-field}.  Depending on its argument,
+which must be a power of a single prime, this function will return a
+domain of type {\sf GFp} or {\sf GFq}.
+
+Elements of these domains are implemented using the hierarchy of
+structure types shown in \figref{NumberElements:Fig}.  The elements of
+a rational integer domain are all of structure type
+\keylisp{rational-integer}.  However, some numeric domains may contain
+elements of different structure types.  For instance, objects of
+structure type \keylisp{rational-integer} as well as
+\keylisp{rational-number} can be elements of the rational number
+domains ($\Q$).  This approach allows us to represent exactly integers
+and rational numbers in $\R$ and $\C$.  In the future, a similar
+approach will allow us to represent algebraic and transcendental
+numbers exactly.
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{Scalars.eps scaled 500}
+\end{center}
+\caption{Mathematical Scalars\label{NumberElements:Fig}}
+\end{figure}
+
+One of the complications Weyl must deal with is that Lisp has its own
+model of the numbers, which must co-exist with Weyl's model.  The type
+structure used by Lisp is given in \figref{LispNumbers:Fig}.  To
+simplify use of Weyl, we allow users to create Weyl numbers from Lisp
+numbers, and to incorporate Lisp numbers into their code by providing
+some automatic coercions.  Thus adding a Lisp number to an element of
+$\R$ causes the Lisp number to be coerced to an element of $\R$ of
+structure {\sf rational-integer}.
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{LispNumbers.eps scaled 500}
+\end{center}
+\caption{Lisp Numbers\label{LispNumbers:Fig}}
+\end{figure}
+
+There are several different ways to determine if an object is a
+scalar.  
+
+\begin{center}
+\begin{tabular}{ll}
+{\sf (typep {\em obj} 'cl:number)}\index{number@{\sf cl:number}, a
+Lisp type}& a Lisp number, \\ 
+{\sf (typep {\em obj} 'numeric)} \index{numeric@{\sf numeric}, a
+Lisp type}& a Weyl number, \\ 
+{\sf (number? {\em obj})}\index{number?@{\sf number?}}& 
+    either a Lisp number or a Weyl number.
+\end{tabular}
+\end{center}
+
+The following sections are organized by the different structure types.
+Sections~\ref{Rational:Integer:Sec} through \ref{Finite:Fields:Sec}
+deal with rational integers, rational numbers, real numbers, complex
+numbers and elements of finite fields respectively.  In each section
+we discuss the different domains these structure elements can be used
+in followed by a discussion of the operations that can be performed
+with each structure type.
+
+\section{Rational Integers}
+\label{Rational:Integer:Sec}
+
+The rational integers are the integers of elementary arithmetic:
+\[
+\Z = \{\ldots, -3, -2, -1, 0, 1, 2, 3, \ldots\}.
+\]
+Other than limitations on the memory of the host computer, there is no
+limitation on the size of the elements of $\Z$.  The term {\em
+rational} integer is used to distinguish this domain from other
+domains of {\em algebraic} integers, \eg, $\Z[(1+\sqrt{5})/2]$.
+
+A domain of rational integers can be created using the following function.
+
+\begin{functiondef}{get-rational-integers}{}
+Returns a domain that is isomorphic to the rational integers, $\Z$.
+When called repeatedly, it always returns the same value until
+\keylisp{reset-domains} is called. 
+\end{functiondef}
+
+\noindent
+Most of the time, there only needs to be one rational integer domain.
+The domain of rational integers is a euclidean domain.
+
+Elements of structure type \keylisp{rational-integer} can be elements
+of domains of type \keylisp{rational-numbers}, \keylisp{real-numbers}
+and \keylisp{complex-numbers}.  Equivalently, if {\em domain} is a
+domain that admits elements of structure type
+\keylisp{rational-integer}, then one invoke \keylisp{make-element}
+with {\em domain} and a Lisp integer.
+
+\medskip
+Rational integers are most easily created by coercing a Lisp integer
+to a rational integer domain using the function \keylisp{coerce}.
+Furthermore, the usual arithmetic routines ({\tt +}, {\tt -}, {\tt *},
+{\tt /} and {\tt expt}) work with rational integers that are 
+elements of the same domain.  If the domain is a field then {\tt /}
+may return a \keylisp{rational-number}. 
+
+For instance, the following routine could be used to compute
+factorials.
+\begin{code}
+(setq *Z* (get-rational-integers)) 
+
+(defun factorial (n)
+  (if (< n 2) (one *Z*)
+      (* (coerce n *Z*) (factorial (- n 1)))))
+\end{code}
+
+\noindent
+Notice that the unit element of {\sf *Z*} was created by using the
+function {\sf one}, rather than {\sf (coerce 1 *Z*)}.  In general,
+this is more efficient. 
+
+One of the more commonly used control structures is that used to
+construct exponentiation from multiplication by repeated squaring.
+This control structure is captured by the internal function
+\keylisp{weyli::repeated-squaring}. 
+
+\begin{functiondef}{weyli::repeated-squaring}{mult one}
+Returns a function of two arguments that is effectively
+\begin{code}
+ (lambda (base exp) 
+   (declare (integer exp))
+   (expt base exp))
+\end{code}
+except that the body does the exponentiating by repeated squaring using
+the operation {\em mult}.  If {\sf exp} is $1$, then {\em one} is
+returned.
+\end{functiondef}
+
+Using this function, one could have defined exponentiation as
+\begin{code}
+(defun expt (x n)
+  (funcall (weyli::repeated-squaring #'times (coerce 1 (domain-of x)))
+           x n))
+\end{code}
+However, this routine can be used for operations other than
+exponentiation.  For instance, if one wanted a routine that replicates
+a sequence {\tt n} times, one could use the following:
+\begin{code}
+(defun replicate-sequence (x n)
+  (funcall (weyli::repeated-squaring #'append ())
+           x n))
+\end{code}
+
+\begin{functiondef}{isqrt}{n}
+Returns the integer part of the square root of {\em n}.
+\end{functiondef}
+
+\begin{functiondef}{integer-nth-root}{m n}
+Computes the largest integer not greater than the $n$-th root of $m$.
+\end{functiondef}
+
+\begin{functiondef}{power-of?}{number \optional{} base}
+Returns {\em base} and $k$ if $\mbox{\em number} = \mbox{\em base}^k$,
+otherwise it returns {\sf nil}.  If {\em base} is not provided returns
+the smallest integer of which {\em number} is a perfect power.
+\end{functiondef}
+
+
+\begin{functiondef}{factor}{n}
+Factors {\em n} into irreducible factors.  The value returned is a
+list of dotted pairs.  The first component of the dotted pair is the
+divisor and the second is the number of times the divisor divides {\em
+n}.  The type of factorization method used, can be controlled by
+setting the variable \keylisp{*factor-method*}.  The allowable values are 
+\keylisp{simple-integer-factor} and \keylisp{fermat-integer-factor}.
+\end{functiondef}
+
+
+\begin{functiondef}{prime?}{n}
+Returns true if $n$ is a prime number. (For other domains,
+if $n$ has no factors that are not units.)
+\end{functiondef}  
+
+\begin{functiondef}{totient}{n}
+Returns the Euler totient function of {\em n}, the number of positive
+integers less than $n$ that are relatively prime to {\em n}, \ie:
+\[
+\mbox{\sf totient}(n) = n \prod_p \left(1 - \frac{1}{p}\right),
+\]
+where product is over all prime divisors of {\em n}.
+\end{functiondef}
+
+\begin{functiondef}{factorial}{n}
+Computes $n!$
+\end{functiondef}
+  
+\begin{functiondef}{pochhammer}{n k}
+Computes the Pochhammer function of {\em n} and {\em k}, which is
+closely related to the factorial:
+\[
+\mbox{\sf pochhammer}(n, k) = (n)_k = n \cdot (n+1) \cdot (n+2) \cdots
+(n+k-1).
+\]
+\end{functiondef}
+
+
+\begin{functiondef}{combinations}{n m}
+Computes the number of combinations of {\em n} things taken {\em m} at
+a time. 
+\[
+\mbox{\sf combinations}(n, m) = {n \choose m} = \frac{n!}{m! \,
+(n-m)!}.
+\]
+\end{functiondef}
+  
+\begin{functiondef}{newprime}{n}
+Returns the largest prime less than its argument.
+\end{functiondef}
+
+(Need to point out that the elements of the second rational integer
+domain created are totally different from that those that are elements
+of the first instance of the rational integers.)
+
+\section{Rational Numbers}
+\label{Rational:Numbers:Sec}
+
+The domain rational numbers, $\Q$, is the quotient field of the ring
+of rational integers.  The elements of a rational number domain can
+have structure type either \keylisp{rational-integer} or
+\keylisp{rational-number}.  Elements
+
+As in Common Lisp there is a set of four functions for truncating
+numbers and ratios to integers.  If the second argument is not
+provided then it defaults to 1.  If only the first argument is
+provided and it is a rational integer, then all four functions return
+the same values.
+
+A domain of rational integers is created by the following function.
+
+\begin{functiondef}{get-rational-numbers}{}
+Returns a domain that is isomorphic to the rational numbers, $\Q$.  When
+called repeatedly, it always returns the same value until
+\keylisp{reset-domains} is called. 
+\end{functiondef}
+
+
+\medskip
+\begin{flushleft}
+ \functdef{floor}{number \optional divisor} \\
+ \functdef{ceiling}{number \optional divisor}\\
+ \functdef{truncate}{number \optional divisor}\\
+ \functdef{round}{number \optional divisor}
+\end{flushleft}
+
+
+\section{Real Numbers}
+\label{Real:Numbers:Sec}
+
+{\em The entire real number situation is somewhat confused.  In
+particular, the relationship between floating point numbers and real
+numbers is jumbled.  These issues will be fixed at a later date. }
+
+\begin{functiondef}{get-real-numbers}{\optional{}precision}
+This returns a domain whose elements are floating point numbers.  If
+{\em precision} is not specified, then the machines default double
+precision floating point numbers will be used.  If {\em precision} is
+specified, then a special arbitrary precision floating point package
+will be used.  Operations with these numbers will be somewhat slower
+(and will cause more garbage collection) than when using the machine's
+floating point data types.
+\end{functiondef}
+
+\begin{functiondef}{floor}{number \optional {} divisor}
+Computes the floor of {\em number}.
+\end{functiondef}
+
+\begin{functiondef}{ceiling}{number \optional {} divisor}
+Computes the ceiling of {\em number}.
+\end{functiondef}
+
+\begin{functiondef}{truncate}{number \optional {} divisor}
+Computes the truncate of {\em number}.
+\end{functiondef}
+
+\begin{functiondef}{round}{number \optional {} divisor}
+Computes the round of {\em number}.
+\end{functiondef}
+
+
+\begin{functiondef}{sqrt}{n}
+For positive $n$ returns positive $\sqrt{n}$ with the same precision
+as $n$.
+\end{functiondef}
+
+
+The following standard trigonometric and hyperbolic routines are provided
+\begin{center}
+\begin{tabular}{llll}
+$\mbox{\sf sin}~n$ & $\mbox{\sf asin}~n$ & $\mbox{\sf sinh}~n$ & $\mbox{\sf asinh}~n$ \\
+$\mbox{\sf cos}~n$ & $\mbox{\sf acos}~n$ & $\mbox{\sf cosh}~n$ & $\mbox{\sf acosh}~n$ \\
+$\mbox{\sf tan}~n$ & $\mbox{\sf atan}~n$ & $\mbox{\sf tanh}~n$ &
+$\mbox{\sf atanh}~n$ 
+\end{tabular}
+\end{center}
+
+\begin{functiondef}{exp}{n}
+Returns $e^n$.
+\end{functiondef}
+
+\begin{functiondef}{log}{n \optional b}
+For positive $n$ returns the principal part of $\log_b n$.  If $b$ is
+not supplied then $e$, the base of natural logarithms, is used for $b$.
+\end{functiondef}
+
+\section{Complex Numbers}
+\label{Complex:Numbers:Sec}
+
+Not yet implemented.
+
+\begin{functiondef}{realpart}{z}
+If $z = x + i y$ returns $x$.
+\end{functiondef}
+
+\begin{functiondef}{imagpart}{z}
+If $z = x + i y$ returns $y$.
+\end{functiondef}
+
+\begin{functiondef}{conjugate}{z}
+If $z = x + i y$ returns $x - i y$.
+\end{functiondef}
+
+\begin{functiondef}{abs}{z}
+If $z = x + i y$ returns $|z| = \sqrt{x^2 + y^2}$.
+\end{functiondef}
+
+\begin{functiondef}{phase}{z}
+If $z = r e^{i\theta}$ returns $\theta$.  $r$ is the absolute value of $z$.
+\end{functiondef}
+
+\section{Quaternions}
+\label{Quaternion:Sec}
+  
+Quaternions are a non-commutative algebra over a field, usually the
+reals, that are often used to represent three dimensional
+rotations. Weyl can construct a quaternion algebra over any field,
+$F$. This algebra is a four dimensional vector space over $F$ with the
+following relations. The element $\langle 1, 0, 0, 0 \rangle$ is the
+multiplicative identity. If we denote $i = \langle 0, 1, 0, 0 \rangle$,
+$j = \langle 0, 0, 1, 0 \rangle$ and $k = \langle 0, 0, 0, 1 \rangle$,
+then 
+\[
+i^2 = j^2 = k^2 = -1,\quad ij = - ji,\quad jk = -kj 
+\quad\mbox{and}\quad ik = -ki.
+\]
+  
+\begin{functiondef}{get-quaternion-domain}{field}
+Gets a quaternion algebra over {\em field}, which must be a field.
+\end{functiondef}
+  
+Quaternions can be created using \keylisp{make-element}. 
+  
+\begin{functiondef}{make-element}{quaternion-algebra}{$v_1$ $v_2$ $v_3$ $v_4$}
+Creates an element of quaternion-algebra from its arguments. The value
+returned will be $v_1 + i \cdot v_2 + j \cdot v_3 + k \cdot v_4$.  As
+with other versions of {\sf make-element}, the function
+{\sf weyli::make-element} assumes the arguments are all elements of the
+coefficient domain and is intended only for internal use.
+\end{functiondef}
+  
+As an algebraic extension of the real numbers, the quaternions are a
+little strange. The subfield of quaternions generated by $1$ and $i$,
+is isomorphic to the complex numbers.  Adding $j$ and $k$ makes the
+algebra non-commutative and causes it to violate some basic
+intuitions. For instance, $-1$ has at least three square roots!
+  
+We illustrate some of these issues computationally.
+First we create a quaternion algebra in which to work.
+\begin{code}  
+> (setq q (get-quaternion-domain (get-real-numbers)))
+Quat(R)
+\end{code}
+  
+  Next, we can create some elements of the quaternions and do some
+simple calculations with them.
+\begin{code}
+> (setq a (make-element q 1 1 1 1))
+<1, 1, 1, 1>
+
+> (setq b (/ a 2))
+<1/2, 1/2, 1/2, 1/2>
+  
+> (* b b b)
+<-1, 0, 0, 0>
+\end{code}
+  
+\noindent
+As expected, one can multiply quaternions by other quaternions and by
+elements of the coefficient field (or objects that can be coerced into
+the coefficient field).
+  
+\begin{functiondef}{conjugate}{quaternion}
+This is an extension of the concept of complex conjugation.  It
+negates the coefficients of $i$, $j$ and $k$. This is illustrated by
+the following example.
+\begin{code}
+> (setq c (make-element q 1 2 3 4))
+<1, 2, 3, 4>
+  
+> (conjugate c)
+<1, -2, -3, -4>
+
+> (* c (conjugate c)
+<30, 0, 0, 0>
+\end{code}
+\end{functiondef}
+  
+Notice that the components of the product of a quaternion with its
+conjugate are all zero except for the very first component. This
+matches what happens when one multiplies a complex number with its
+complex conjugate.
+  
+
+
+\section{Finite Fields}
+\label{Finite:Fields:Sec}
+
+The usual finite fields are provided in Weyl, $\F_p$ and algebraic
+extensions of $\F_q$.  Such domains are called {\em GFp} domains.
+Since all finite fields with the same number of elements are
+isomorphic, fields are created by specifying the elements in the
+field.
+
+\begin{functiondef}{get-finite-field}{size}
+{\em Size} is expected to be a a power of a prime number.  This
+function returns a finite field with the indicated number of elements.
+If {\em size} is {\sf nil} then a {\em GFm} field is returned. 
+\end{functiondef}
+
+\begin{functiondef}{number-of-elements}{finite-field}
+Returns the number of elements in {\em finite-field}.
+\end{functiondef}
+
+At the moment Weyl can only deal with the fields $\F_{2^k}$ and $F_p$.
+For instance,
+\begin{code}
+> (setq F256 (get-finite-field 256))
+GF(2^8)
+
+> (characteristic F256)
+2
+
+> (number-of-elements F256)
+256
+\end{code}
+
+
+Elements of a GFp are created by coercing a rational integer into a
+GFp domain.  For finite fields with characteristic greater than $2$,
+coercing an integer into $F_p$ maps $n$ into $n \pmod p$.  For
+$F_{2^k}$, the image of an integer is a bit more complicated.  Let the
+binary representation of $n$ be 
+\[
+n = {n_\ell n_{\ell-1} \cdots n_2 n_1 n_0}_2,
+\]
+and let $\alpha$ be the primitive element of $F_{2^k}$ over $F_2$.
+Then
+\[
+n \longrightarrow n_{k-1} \alpha^{k-1} + n_{n-2}\alpha^{k-2} + \cdots
+ + n_1 \alpha + n_0.
+\]
+This mapping is particularly appropriate for problems in coding
+theory.
+
+In addition, elements of finite fields can be created using
+\keylisp{make-element}.  
+
+\begin{functiondef}{make-element}{finite-field integer \optional rest}
+Creates an element of {\em finite-field} from {\em integer\/}.  This
+is the only way to create elements of $\F_{p^k}$.  (As with all {\sf
+make-element} methods, the argument list includes \&rest arguments,
+but for finite fields any additional arguments are ignored.)
+\end{functiondef}
+
+As an example of the use of finite fields, consider the following
+function, which determines the order of an element of a finite field
+(the hard way).
+\begin{code}
+(defun element-order (n)
+  (let* ((domain (domain-of n))
+         (one (coerce 1 domain)))
+    (loop for i upfrom 1 below (number-of-elements domain)
+          for power = n then (* n power)
+     	  do (when (= power one) 
+               (return i)))))
+\end{code}
+
+A more efficient routine is provided by Weyl as {\sf multiplicative-order}. 
+
+\begin{functiondef}{multiplicative-order}{elt}
+{\em Elt} must be an element of a finite field.  This routine computes
+multiplicative order of {\em elt}.  This routine requires factoring
+the size of the multiplicative group of the finite field and thus is
+appropriate for very large finite fields.
+\end{functiondef}
+
+The following illustrates use of these routines.
+\begin{code}
+> (element-order (coerce 5 (get-finite-field 41)))
+20
+
+> (multiplicative-order (coerce 5 (get-finite-field 41)))
+\end{code}
+
+\medskip
+Consider what is involved when implementing an algorithm using the
+Chinese remainder theorem. The computation is done in a number of
+domains like $\Z/(p_1)$, $\Z/(p_2)$ and $\Z/(p_3)$.  The results are
+then combined to produce results in the domains $\Z/(p_1p_2)$ and
+$\Z/(p_1p_2p_3)$.  Rather than working in several different domains
+and explicitly coercing the elements from one to another, it is easier
+to assume we are working in a single domain that is the union of
+$\Z/(m)$ for all integers $m$ and marking the elements of this domain
+with their moduli.  We call this domain a \keylisp{GFm}.
+
+\keylisp{GFm} domains are also created using the \keylisp{get-finite-field}
+but by providing {\tt nil} as the number of elements in the field.
+
+Elements of \keylisp{GFm} are printed by indicating their modulus in a
+subscript surrounded by parentheses.  Thus $2_{(5)}$ means $2$ modulo
+$5$.  Combining two elements $a_{(m)}$ and $b_{(m)}$ that have the
+same moduli is the same as if they were both elements of $\Z/(m)$.  To
+combine elements of two different rings, we find a ring that contains
+both as subrings and perform the calculation there.  Thus combining
+$a_{(m)}$ and $b_{(n)}$ we combine the images of $a$ and $b$ as
+elements of $\Z/(\gcd(m,n))$.
+
+
+
+FIXTHIS: Need works something out for dealing with completions of the
+integers at primes, and how we are going to compute with elements.
+

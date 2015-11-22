@@ -1,0 +1,549 @@
+% -*- Mode: LaTeX -*-
+% $Id: Topology.tex,v 1.9 1995/05/12 20:41:36 chew Exp $
+\chapter{Spaces and Topology}
+\label{Topology:Chap}
+
+Spaces are sets of mathematical objects ({\em domains} in Weyl's
+terminology) that we endow with some topological structure. Examples
+of spaces include $n$-dimensional Euclidean space, the space of square
+integrable functions and the spectrum of a ring. In addition, we often
+provide a metric to provide the geometric structure of a space.  This
+chapter describes the tools Weyl provides for creating and
+manipulating these spaces.
+  
+\begin{figure}
+\begin{center}
+\BoxedEPSF{SpaceDomains.eps scaled 500}
+\end{center}
+\caption{Basic Domains for Spaces\label{SpaceDomains:Fig}}
+\end{figure}
+
+The basic domains Weyl provides for spaces are shown in
+\figref{SpaceDomains:Fig}.  All spaces are subclasses of
+\keylisp{abstract-space}. It would be very useful to be able to
+indicate that a space is Hausdorff, connected, compact or has some
+similar topological property. This is not generally possible at the
+moment, but will be added at some future date.
+  
+One property that can be attached to a space is its {\em
+dimension}. Intuitively, the dimension of a space can be thought of as
+the number of orthogonal directions that can be taken in the
+space. However, this does not apply to spaces that are not embedded in
+some Euclidean space. Mathematically, the dimension of a topological
+space is either a non-negative integer or infinity.\footnote{By using
+the Hausdorff dimension for the dimension of a space, we can construct
+spaces that have non-integral dimension.} For Weyl's purposes, it is
+useful to, in addition, have spaces without a specific dimension. A
+\keylisp{dimensional-space} is a space that has a specific, possibly
+infinite, dimension.
+  
+A very useful, specific type of dimensional space is a \keyi{Euclidean
+space}. A Euclidean space is $\R^n$ endowed with the Euclidean metric
+for measuring distances between points. The open sets of a Euclidean
+space can be constructed via set union from the open balls $B_d(p)$,
+the set of points of distance less than $d$ from the point $p$. The
+open sets are closed under union and finite intersection.  The closed
+sets are the complements of the open sets.
+
+  
+Closely related to Euclidean spaces are general vector spaces and
+modules. Recall from \sectref{ModuleDomain:Sec}, that $M$ is an
+$R$-module if $M$ is an abelian group and if multiplication by
+elements of $R$ is closed in $M$. A \keyi{free module} is a module
+that is freely generated.  As can be seen from
+\figref{SpaceDomains:Fig}, Weyl only permits free modules that have
+specified dimensions.  A \keyi{vector space} is a free $R$-module
+where $R$ is a field. From \figref{SpaceDomains:Fig} we see that Weyl
+treats a Euclidean space as a vector space, where the coefficient
+domain is the real numbers, $R$.
+%For consistency with other areas of
+%mathematics, we also call a vector space an \keyi{affine space}. 
+The routines for dealing with free modules are described in
+\sectref{FreeModules:Sec}.
+  
+Finally, Weyl provides a mechanism for dealing with projective spaces.
+A projective space is an $n+1$ dimensional space together with an
+equivalence relation that equates points that are nonzero scalar
+multiples of each other, i.e., $u \cong v$ if $u = \alpha v$, for
+$\alpha \not= 0$. Due to the equivalence relation, the projective
+space has dimension $n$.
+  
+The actual dimensions of a space can be determined by the function
+{\sf dimensions}.
+  
+\begin{functiondef}{dimensions}{space} 
+Returns a list of the dimensions of the space. For
+free-modules, vector spaces, projective spaces, and
+so on there is only one element in this list. However
+for spaces like $\R^3 \times \Z^5$ there may be more elements.
+\end{functiondef}
+  
+\section{Point Set Topology}
+\label{PSTopology:Sec}
+
+Objects in topologies are subsets of {\em spaces}.  The root class of
+all spaces is abstract-space. Abstract spaces do not have a dimension
+and consist only of points.  To create an abstract space one must
+explicitly call {\sf make-instance} on the class
+\keylisp{abstract-space}. The most commonly used spaces, the Euclidean
+spaces, can be created using the function
+\keylisp{get-euclidean-space}:
+  
+\begin{functiondef}{get-euclidean-space}{dimension \optional (domain
+{\sf *general*})} Creates, if needed, an instance of the Euclidean
+space with the indicated dimension. Elements of the Euclidean space
+will be represented as $n$-tuples. The components of these $n$-tuples
+will be elements of {\em domain}.
+\end{functiondef}  
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{PointClasses.eps scaled 500}
+\end{center}
+\caption{Basic Classes for Points\label{PointClasses:Fig}}
+\end{figure}
+
+To create points in a space we use the function \keylisp{make-point}:
+  
+\begin{functiondef}{make-point}{space coord1 \rest coords}
+Creates a point in {\em space}. If {\em space} is an abstract space,
+then only one argument is expected and will be treated as a unique
+identifier for the point in the space. If the first coordinate is nil
+then a new {\em anonymous} point will be created. For vector spaces,
+the values are expected to be the coordinates of the point.
+\end{functiondef}
+   
+All points in a space are identified by a unique integer
+identifier. This is currently implemented (using the class {\sf
+weyli::has-id-number}) by including a slot in each point containing an
+integer unique to that point.  When anonymous points are generated in
+an abstract space, the printed representation is distinguished by this
+number. For some spaces, \eg, $\R$, it may be more appropriate to use
+a different ordering.
+
+\begin{code}  
+> (setq abs-space (make-instance 'abstract-space))
+#<Domain: ABSTRACT-SPACE>
+
+> (progn
+     (setq a (make-point abs-space nil)
+           b (make-point abs-space nil)
+           c (make-point abs-space 'c))
+     (list a b c))
+(<1> <2> <C>)
+\end{code}
+  
+\noindent
+Notice that the third point was created with a name and, unlike the
+other two points, its printed form includes that name.
+  
+Similarly, we can create points in Euclidean domains.  In this case,
+the printed representation of a point includes the point's
+coordinates.
+  
+\begin{code}
+> (setq ee (get-euclidean-space 3))
+E^3
+  
+> (make-point ee 1 2 3)
+<1, 2, 3>
+\end{code}  
+  
+\section{Affine Spaces}
+\label{AffineSpace:Sec}
+  
+Affine spaces are created using the function \keylisp{make-affine-space}:
+  
+\begin{functiondef}{make-affine-space}{field dimension}  
+Create an affine space of dimensions {\em dimension} where the
+components are elements of the field {\em field}. (Ed: I think this
+should be weakened to work for arbitrary rings.)
+\end{functiondef}
+
+\begin{code}
+>(setq R (get-real-numbers))
+R
+>(setq space (make-affine-space R 2)
+\end{code}
+
+Elements of spaces, both affine and projective, are created using the
+generic function {\sf make-point}:
+  
+\begin{functiondef}{make-element}{space \rest elements}  
+Creates an element of {\em space}. {\em Elements} is a list of $n$
+elements which can be coerced into the coefficient domain of space.
+\end{functiondef}
+  
+There is also an internal function \keylisp{weyli::make-element} that
+does not do any checking of its arguments and can lead to rather
+subtle problems if used incorrectly.  On the other hand it is
+noticeably faster.
+  
+\begin{functiondef}{cross-product}{u v}
+This function is only defined for elements of three dimensional vector
+spaces. If $u = \langle u_1, u_2, u_3\rangle$ and $v = \langle v_1,
+v_2, v_3\rangle$ then
+\[
+(\mbox{\sf cross-product} u v) =
+(v_2 u_3 - u_3 v_2, u_3 u_1 - u_1 v_3, u_1 v_2 - u_2 v_1).
+\]
+\end{functiondef}
+
+\section{Projective Spaces}
+\label{ProjectiveSpaces:Sec}
+  
+\begin{functiondef}{make-projective-space}{field dimension}
+Create a projective space of dimensions {\em dimension} where the
+components are elements of the field {\em field}.
+\end{functiondef}
+
+  
+As in the case of regular affine spaces, elements of a projective
+space are created using the generic function \keylisp{make-point}.
+
+\begin{functiondef}{make-point}{space \rest elements}
+Creates a point which an element of {\em space}.  For projective
+spaces, {\em elements} can be a list of either $n$ or $n+1$ elements
+of the coefficient domain of space.  If $n+1$ elements are provided
+then these are the full set of elements of the point.  If only $n$
+elements are provided, the final missing element is filled out by a 1
+from the coefficient domain of space.
+\end{functiondef}
+  
+\begin{code}
+(setq p (make-projective-space r 2))
+(make-point p 1 1 1)
+\end{code}
+  
+Affine spaces can be embedded in projective spaces.  For projective
+spaces of dimension $n$, there are $n+1$ canonical embeddings. The
+function \keylisp{make-affine-projection} is passed a projective space
+and creates an affine space with an attached homomorphism into the
+projective space.
+  
+\begin{functiondef}{make-affine-projection}{space \optional dimension}  
+This function returns an affine space that is the projection of {\em
+space} where we hold the component {\em dimension} fixed.  For
+instance, let $p = (u, v, w)$ is an element of a two dimension
+projective space $P^2$. The image of $p$ in the affine projection of
+$P^2$ with dimension $0$ held fixed is $(v/u, w/u)$.  With dimension
+$1$ is held fixed then $p$ maps to $(u/v, w/v)$. Finally, if dimension
+2 is held fixed, $p$ maps to $(u/w, v/w)$. If {\em dimension} is not
+provided then we produce an affine space where the last dimension is
+held fixed.
+\end{functiondef}
+  
+\section{Algebraic Topology}
+\label{AlgebraicTopology:Sec}
+
+\subsection{Cells and Simplices}
+
+A \keyi{$k$-cell} is a region (subset) of a space that is homeomorphic
+to $B^k$, the unit ball in $R^k$: $B^k = \{p \in R^k : ||p|| <= 1\}$.
+That is, a $k$-cell is a set that is topologically equivalent to an
+$k$-dimensional ball---it is connected, without any holes, etc.
+  
+A \keyi{$k$-simplex} is a $k$-cell defined by the convex hull of $k+1$
+points, called vertices.  For example, a $1$-simplex is a line segment
+defined by two vertices, while a $2$-simplex is a triangle, defined by
+three. 
+%An {\em oriented} $k$-simplex is defined by an ordered list of
+%vertices, and the lists are partitioned into two {\em orientations} --
+%those that are even permutations of some reference ordering, and those
+%that are odd permutations.
+
+Unlike most objects in Weyl, (oriented) simplices are not domain
+elements. They should be viewed as sorted lists of sets of points.
+  
+\begin{functiondef}{make-simplex}{vertex$_0$ $\ldots$ vertex$_k$}
+Creates a $k$-simplex whose components are $\mbox{\sf vertex}_0,
+\ldots, \mbox{\sf vertex}_k$. This routine ensures that all of the
+points are from the same space.  Points are always reordered to match
+the order of their id-numbers.  Simplices are immutable, \ie, once
+created they can not be modified.
+\end{functiondef}
+  
+Assuming that the variables {\sf a}, {\sf b} and {\sf c} are points in
+some abstract space, a triangle could be created as follows:
+ 
+\begin{code}
+> (setq triangle (make-simplex a b c))
+[<A>, <B>, <C>]
+\end{code}
+
+\noindent
+Two simplices are equal if they have the same vertex set.
+  
+\begin{code}
+> (= triangle (make-simplex a b c))
+t
+\end{code}
+  
+\begin{functiondef}{vertices-of}{simplex}
+Returns a list of the vertices of {\em simplex}.  For instance,
+\begin{code} 
+> (vertices-of triangle)
+(<A> <B> <C>)
+\end{code}
+\end{functiondef}
+  
+Notice that there aren't any commas between the vertices. This is a
+LISP list as opposed to a simplex.
+  
+\begin{methoddef}{face?}{cell1 cell2}
+A predicate that returns {\sf T} if {\em cell1} is a face of {\em
+cell2}.  Cells are defined to be faces of themselves.
+\end{methoddef}
+
+\begin{methoddef}{face?}{vertex-list cell}
+A predicate that returns {\sf T} if the simplex represented by the
+{\em vertex-list} is a face of {\em cell}.
+\end{methoddef}
+
+%This function does not appear within the code. -lpc
+%\begin{functiondef}{same-cell?}{cell1 cell2}
+%A predicate that returns {\sf T} if {\em cell1} and {\em cell2} are
+%the same cell, independent of orientation.
+%\end{functiondef}
+  
+\begin{methoddef}{dimension-of}{cell}
+Returns a Lisp integer that is the dimension of {\em cell}.
+Currently, Weyl provides a dimension function only for simplices.
+\end{methoddef}
+
+\begin{methoddef}{opposite}{face simplex}
+Returns a list of vertices that are opposite the given {\em face} of
+{\em simplex}.  The {\em face} can be a simplex, a list of vertices,
+or a single point.  Useful for navigation within a \key{cell complex}.
+\end{methoddef}
+
+\subsection{Complexes}
+  
+A \keyi{cell complex} $K$ is a set of cells of the same
+space with the property that if $c \in K$ then $\mbox{faces}(c)
+\subset K$, that is if a cell $c$ is in the complex then all of the
+faces of $c$ must also be in $K$.  It follows that there is a set of
+maximal cells (those that are not the face of any other cell in
+$K$) that provide a unique minimal representation for $K$. Although
+the maximal cells in a complex often have the same dimension, this is
+not required.
+
+A \keyi{simplicial complex} is a cell complex that can contain only
+simplices.
+  
+\begin{functiondef}{make-simplicial-complex}{simplices}
+Creates a simplicial complex containing each of the simplices in the
+list {\em simplices}.
+\begin{code}
+> (setq complex (make-simplicial-complex (list triangle)))
+#<Simplicial-Complex>
+\end{code}
+\end{functiondef}
+
+\begin{macrodef}{map-over-cells}{(var \optional $n$) cell-complex
+\body body}
+The forms in {\em body} are evaluated with {\em var} bound to each
+$n$-dimensional cell of {\em cell-complex}.  If $n$ is {\sf nil} or
+unspecified then the body is evaluated for all cells of {\em complex},
+regardless of dimension.  {\em Cell-complex} is a \key{cell complex}.
+\end{macrodef}
+
+\begin{macrodef}{map-over-maximal-cells}{(var) cell-complex \body body}
+The forms in {\em body} are evaluated with {\em var} bound to each
+maximal cell of {\em cell-complex}.
+\end{macrodef}
+
+Cells constructed at various times may be equivalent, but not identical
+as Lisp objects.  The function \keylisp{get-cell} can be used to
+ensure that cells are identical (\ie, Lisp {\sf EQ}).  Note that most
+functions that act on some cell within a cell complex (such as
+\keylisp{member}, \keylisp{facets}, \keylisp{cofacets},
+\keylisp{maximal-cell?}, and \keylisp{delete-maximal-cell}) expect the
+input cell to be identical (as a Lisp object) to the cell within the
+complex.  In other words, unless the input cell came from the specific
+cell complex due to some other operation (\eg, {\sf map-over-cells}),
+you should probably use {\sf get-cell}.
+
+\begin{methoddef}{get-cell}{cell cell-complex}
+Returns a cell of {\em cell-complex} that is equivalent to {\em cell}.
+{\sf Nil} is returned if there is no such cell.
+\end{methoddef}
+
+\begin{methoddef}{get-cell}{vertex-list cell-complex}
+Returns a simplex of {\em cell-complex} that has the vertices
+specified in {\em vertex-list}.  {\sf Nil} is returned if there is no
+such simplex.
+\end{methoddef}
+
+\begin{methoddef}{member}{cell cell-complex}
+Returns {\sf T} if {\em cell} is a member of {\em cell-complex}.
+\end{methoddef}
+
+The {\em facets} of a cell are the cell's faces that are one dimension
+lower than the cell itself.  For instance, for a tetrahedron, the
+facets are the triangles that make up the sides of the tetrahedron.
+
+\begin{methoddef}{facets}{cell cell-complex}
+Returns a list of the facets of {\em cell}.  If {\em cell-complex} is a
+cell complex then the reported facets are all (pre-existing) members
+of the cell complex.  If {\em cell-complex} is {\sf nil} then the
+facets are newly constructed.
+\end{methoddef}
+
+\begin{methoddef}{facets}{cell-list cell-complex}
+Returns a list containing each cell that is a facet of some cell in 
+{\em cell-list}.  No duplicates appear in the resulting list.  This is
+useful for finding facets of facets; for instance, one can find the
+edges of a tetrahedron.
+\end{methoddef}
+
+Within a \key{cell complex}, the {\em cofacets} of a cell $c$ are all
+the cells of the complex that have $c$ as a facet.  {\sf Facets} and
+{\sf cofacets} together provide a means for ``navigating'' within a
+cell complex.
+
+\begin{methoddef}{cofacets}{cell cell-complex}
+Returns a list containing the cells of {\em cell-complex} that are
+cofacets of {\em cell}.
+\end{methoddef}
+
+\begin{methoddef}{cofacets}{cell-list cell-complex}
+Returns a list containing each cell of {\em cell-complex} that is a
+cofacet of some cell in {\em cell-list}.  No duplicates appear in the
+resulting list.  This is useful for finding cofacets of cofacets; for
+instance, one can find all triangles adjacent to a given vertex.
+\end{methoddef}
+
+\begin{methoddef}{maximal-cell?}{cell cell-complex}
+Returns {\sf T} iff {\em cell} is a \key{maximal cell} of {\em
+cell-complex}.
+\end{methoddef}
+
+\begin{methoddef}{vertex-set}{cell-complex}
+Returns a list of all the vertices that appear in the {\em
+cell-complex}.
+\end{methoddef}
+
+Cell complexes are, in general, immutable. New cell complexes can be
+created from old cell complexes using boolean operations like union
+and intersection.
+  
+\begin{functiondef}{union}{complex1 complex2}
+Returns a new \key{cell complex}, whose cells are those that appeared
+in either {\em complex1} or {\em complex2}.
+\end{functiondef}
+
+\begin{functiondef}{intersection}{complex1 complex2}
+Returns a new cell complex, whose cells are those that appear in both
+{\em complex1} and {\em complex2}.
+\end{functiondef}
+  
+The following operations violate the immutability of cell complexes.
+Thus they are only intended for use in situations that require
+additional performance or to implement higher level operations which
+do preserve the immutability of their arguments.
+  
+New cells can be added and deleted from cell complexes using {\sf
+insert} and {\sf delete-maximal-cell}.
+  
+\begin{methoddef}{insert}{cell cell-complex}
+Destructively modifies {\em cell-complex} by adding {\em cell} and
+each of its subcells to {\em cell-complex}.  (Each cell and subcell is
+checked to see if it is already a member, thus avoiding insertion of
+duplicate cells.)  This operation is provided for use by internal
+routines.
+\end{methoddef} 
+ 
+\begin{methoddef}{delete-maximal-cell}{cell cell-complex}
+Destructively modifies {\em cell-complex} by deleting {\em cell}
+(which must be a \key{maximal cell}) from {\em cell-complex}.  Any
+subcell of {\em cell} that is not contained within some other cell of
+{\em cell-complex} is also deleted.  This operation is provided for
+use by internal routines.
+\end{methoddef}
+
+
+\subsection{Chains}
+\label{Chains:Sec}
+  
+If $K$ is an oriented simplicial complex, and $G$ an abelian group, a
+$p$-chain $c_p \in C_p(K,G)$ is a map $c_p:p-\mbox{simplices}(K)
+\rightarrow G$ that assigns an element of $G$ to each $p$-simplex in
+$K$.  Equivalently, we may say that a $p$-chain is a {\it formal sum}
+of the $p$-simplices of $K$ with coefficients in $G$.  The group
+operation in $G$ is then used to define the $+$ operator for
+$C_p(K,G)$, yielding the abelian group of $p$-chains over $K$ and $G$.
+
+
+
+\begin{functiondef}{get-chain-module}{complex n \optional group}
+Creates the group of $n$-chains of {\em complex} with coefficients in
+{\em group\/}.  If {\em group} is not provided then $\Z$ is used
+instead.  If provided, {\em group} must be an abelian group.
+\end{functiondef}
+
+Individual chains may be created by coercing a simplex into the chain
+module.
+\begin{code}
+> (setq 1-chains (get-chain-module complex 1))
+C[1](#<COMPLEX>)
+
+> (coerce (make-simplex a b) 1-chains)
+[<A>, <B>]
+
+> (+ (coerce (make-simplex a b) 1-chains) 
+     (* 2 (coerce (make-simplex b c) 1-chains)))
+[<A>, <B>] + 2[<B>, <C>]
+\end{code}
+
+If $\sigma = [v_0, \ldots, v_p]$ is a $p$-simplex, then its boundary
+is the following $p-1$ chain:
+\[
+\partial \sigma = \partial [v_0, \ldots, v_p]
+ = \sum_{i=0}^p (-1)^i [v_0, \ldots, \hat{v_i}, \ldots, v_p],
+\]
+where $\hat{v_i}$ indicates that the $v_i$ vertex is missing.
+The boundary operation can be extended to chains by linearity.
+
+\begin{functiondef}{boundary}{chain}
+{\em chain} can be either chain or a simplex.  It returns the chain
+representing the boundary of {\em chain\/}.
+\end{functiondef}
+
+This is illustrated by computing the boundary of {\sf triangle}.
+\begin{code}
+> (setq tri-bound (boundary triangle))
+[<A>, <B>] + [<B>, <C>] - [<A>, <C>]
+
+> (boundary tri-boundary)
+0
+\end{code}
+It is generally true that $\partial^2 \sigma = 0$ for all simplices
+$\sigma$. 
+
+\begin{functiondef}{boundary-domain}{chain}
+Returns the chain-module that is the domain for the boundary of {\em
+chain}. 
+\end{functiondef}
+  
+\begin{functiondef}{boundary-domain}{simplex}
+Returns a chain whose coefficients are the derivatives of the given
+chain coefficients.  It is assumed that the new chain is in the same
+chain module as the old chain.
+\end{functiondef}
+
+ 
+\begin{functiondef}{deriv}{chain \rest params}
+Returns a chain whose coefficients are the derivatives of the given
+chain coefficients.  It is assumed that the new chain is in the same
+chain module as the old chain.
+\end{functiondef}
+  
+Chains may be added and multiplied by elements of their coefficient domain.  
+  
+\begin{functiondef}{make-chain}{chain-module simplex-coefficient-pairs}
+Creates a chain
+\end{functiondef}
+
+%\section{Charts}  
+

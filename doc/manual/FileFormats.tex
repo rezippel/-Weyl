@@ -1,0 +1,292 @@
+% -*- Mode: LaTeX -*-
+% $Id: FileFormats.tex,v 1.7 1995/04/06 20:48:14 chew Exp $
+
+\chapter{File Formats}
+\label{FileFormats:Chap}
+
+It is often useful to store Weyl objects in disk files---as
+intermediate back ups in long computations, to transport mathematical
+objects between sites, or as a communication mechanisms with external
+systems that want to use objects created by Weyl.  This chapter
+discusses the file formats used by Weyl for a variety of different
+mathematical objects.
+
+\section{Topology and Geometry}
+\label{TopologyFF:Sec}
+
+Curently, there are two file formats related to topology and geometry,
+one for a vertex set and one for a simplicial complex.
+
+The \verb+<VertexSet>+ format is
+
+\begin{code}
+VertexSet <SpaceDimension> <NumVerts>
+<vertex_0>
+<vertex_1>
+...
+<vertex_{NumVerts - 1}>
+\end{code}
+\noindent
+where \verb+<SpaceDimension>+ is the dimension of the embedding space
+and \verb+<NumVerts>+ is the number of vertices.  Each \verb+<vertex>+
+is a list of floating point numbers; the length of the list must match
+the \verb+<SpaceDimension>+.  
+
+In effect, the VertexSet creates a set of vertices numbered (in the
+order given) from 0.  These vertex numbers are used in the file
+formats for other structures such as {\em SimplicialComplex}.
+
+The \verb+<SimplicialComplex>+ format is
+
+\begin{code}
+SimplicialComplex <Dim> <NumSimps>
+[name]
+<simplex_0>
+[name]
+<simplex_1> 
+...
+[name]
+<simplex_{NumSimps - 1}> 
+\end{code}
+\noindent
+where \verb+<Dim>+ is the maximum dimension of the simplicial complex
+and \verb+<NumSimps>+ is the number of maximum dimensional simplices.
+Note that this format is somewhat limited in that all simplices given
+here must have the same dimension (e.g., they must all be triangles or
+must all be segments).  A simplex is just a list of vertex numbers
+(the length of each such list is one more than \verb+<Dim>+); the
+vertex numbers are those defined by a preceding {\em VertexSet}.
+Names are optional.  If a name is given then each of the simplices
+between this name and the next one is assigned that name.  Currently,
+the names are useful only when the SimplicialComplex is part of a
+Mesh.  For a Mesh, the names are used in the specification of
+MeshQuality.
+
+\section{Meshes}
+\label{MeshFF:Sec}
+
+There are two file formats, one to request the meshing of a region and
+the other to read/write meshes from/to files.
+
+\subsection{MeshRequest File Format}
+
+The {\em MeshRequest} file format is:
+
+\begin{code}
+MeshRequest
+<VertexSet>
+<SimplicialComplex>
+<Regions>
+<MeshQuality>
+\end{code}
+\noindent
+\verb+<VertexSet>+ and \verb+<SimplicialComplex>+ 
+describe the mesh boundaries and use file formats as described above.
+The \verb+<SimplicialComplex>+ describes a simplicial-complex that
+makes use of the vertices given in the preceding VertexSet.  The
+\verb+<Regions>+ section determines (and names) the subregion(s) to be
+meshed.  The \verb+<MeshQuality>+ section gives the angle bounds and
+the element sizes.
+
+To mesh a planar region, the VertexSet would have
+\verb+<SpaceDimension>+ $= 2$ and the SimplicialComplex would have
+\verb+<Dim>+ $= 1$ (since each boundary is a segment---a simplex of
+dimension 1).
+
+The boundary given by the SimplicialComplex divides the embedding
+space into one or more subregions.  The \verb+<Regions>+ section is
+used to determine which of those subregions are to be meshed.  A
+subregion is meshed if and only if there is a point given in the
+Regions section that lies witin that subregion.
+
+The format for the \verb+<Regions>+ section is
+
+\begin{code}
+Regions <NumPoints>
+<name_0> <region_pt_0>
+<name_1> <region_pt_1>
+...
+<name_{NumPoints - 1}> <region_pt_{NumPoints - 1}>
+\end{code}
+\noindent
+where \verb+<NumPoints>+ is the number of region points to be defined.
+Each \verb+<region_pt>+ is a list of floating point numbers, where the
+length of the list matches the dimension of the embedding space (the
+\verb+<SpaceDimension>+) given in the preceding \verb+<VertexSet>+.
+The names are used to specify the desired element sizes for the mesh
+in the \verb+<MeshQuality>+ section.  During meshing, each simplex of
+a region has a name based on the name assigned here to the region.
+
+The format for the \verb+<MeshQuality>+ section is
+
+\begin{code}
+[AngleBounds <real> <real>] 
+[SizeTable <NumEntries>
+<name_0> <real>
+<name_1> <real>
+...
+<name_{NumEntries - 1}> <real>]
+\end{code}
+\noindent
+If AngleBounds are given then the first number is a lower bound on
+element angles and the second number is an upper bound.  If no angle
+bounds are given then the resulting elements angles are between 30 and
+120 degrees.  The SizeTable controls the density of the mesh by
+specifying the maximum size (the length of the longest edge) allowed
+for each named region or boundary.  Note that sizes in this file
+format are simply numbers.  This is more restrictive than for meshes
+created from within Weyl where it is possible to specify sizes that
+are functions.
+
+As an example, a request to mesh a square could look like:
+
+\begin{code}
+MeshRequest
+VertexSet 2 4
+0.0 0.0
+1.0 0.0
+1.0 1.0
+0.0 1.0
+SimplicialComplex 1 4
+name
+0 1 
+1 2 
+otherName
+2 3  
+3 0
+Regions 1
+interior
+0.5 0.5
+AngleBounds 10 150
+SizeTable 3
+name 0.2
+otherName 0.1
+interior 0.4
+\end{code}
+
+The function \keylisp{make-mesh-from-file} is used to read a
+MeshRequest and to create the corresponding mesh.  See
+\sectref{CreateMesh:Sec}.
+
+\subsection{Mesh File Format}
+
+The Mesh file format is
+
+\begin{code}
+Mesh
+<VertexSet>
+<SimplicialComplex> 
+<SimplicialComplex>
+\end{code}
+\noindent
+where the first SimplicialComplex represents the boundaries of the
+mesh, and the second represents the elements of the mesh.  Names can
+appear within each SimplicialComplex.
+
+For example, a very simple mesh might be written to a file as
+
+\begin{code}
+Mesh
+VertexSet 2 4
+0.0 0.0
+1.0 0.0
+1.0 1.0
+0.0 1.0
+SimplicialComplex 1 4
+boundary
+0 1
+1 2
+2 3
+3 0
+SimplicialComplex 2 2
+interior
+0 1 2
+0 2 3
+\end{code}
+
+The functions \keylisp{write-mesh} and \keylisp{read-mesh} are used
+for writing and reading meshes.  Function \keylisp{write-mesh} is
+described in \sectref{CreateMesh:Sec}.  Function \keylisp{read-mesh}
+is described in \sectref{MeshingFunctions:Sec}.
+
+\subsection{Regions with Curved Boundaries}
+
+The current release contains only limited facilities for representing
+curved boundaries in files.  We plan to extend this facility for the
+next release.  Note that there are more powerful techniques available
+for representing curved boundaries when working from within Weyl (see
+\keylisp{make-curved-segment} in \sectref{MeshingFunctions:Sec}).
+Within a file, curved boundaries are currently limited to circular
+arcs.  File representations of arcs correspond roughly to the
+available arc representations in \keylisp{make-mesh} (see
+\sectref{CreateMesh:Sec}).  
+
+At present, arcs can only be represented in MeshRequest files.  When
+the resulting mesh is written out to a Mesh file, the curve
+information is lost.  (Note though that boundaries retain their names,
+so it is often possible to reconstruct curve information without
+severe difficulty.)
+
+Within a MeshRequest file, boundary arcs are indicated via the
+inclusion of some additional information in the SimplicialComplex.
+Recall that a line-segment boundary is represented in a file by a pair
+of vertex numbers.  In contrast, an arc is represented by a vertex
+number, a parenthesized list of arc arguments, and another vertex
+number.  The two vertex numbers determine the endpoints of the arc,
+$e_1$ and $e_2$.  The possible arc arguments are
+
+\begin{itemize}
+
+\item {\sf (c \verb+<number>+)}
+The counterclockwise arc from $e_1$ to $e_2$ that is part of the
+circle through $e_1$ and $e_2$ and centered at the vertex with vertex
+number \verb+<number>+.  It is possible (but not a good a idea) to
+specify a center that is not equidistant from $e_1$ and $e_2$.
+
+\item {\sf (t \verb+<number>+)}
+The counterclockwise arc from $e_1$ to $e_2$ that is part of the
+circle through $e_1$, $e_2$, and the vertex with vertex number
+\verb+<number>+.
+
+\item {\sf (r \verb+<number>+)}
+The counterclockwise arc from $e_1$ to $e_2$ that is part of the
+circle with radius \verb+<number>+ through $e_1$ and $e_2$ and centered
+to the left of the ray from $e_1$ to $e_2$.  If the radius is negative
+then the circle is centered to the right of the ray from $e_1$ to
+$e_2$.  A warning is issued if the absolute value of the radius is
+less than half the distance from $e_1$ to $e_2$; the arc that results
+in this case is a half-circle.
+
+\end{itemize}
+
+It is also possible to specify clockwise arcs by using {\sf c-}, {\sf
+t-}, or {\sf r-} in place of {\sf c}, {\sf t}, or {\sf r},
+respectively (although equivalent effects can be achieved by reversing
+the order of the two endpoints).
+
+As an example, the following MeshRequest file describes a circle of
+radius one centered at the origin.  Each of the three possible arc
+arguments have been used for part of the circle.
+
+\begin{code}
+MeshRequest
+VertexSet 2 5
+0 0
+1 0
+0 1
+-1 0
+0 -1
+SimplicialComplex 1 4
+boundary
+1 (c 0) 2
+2 (r 1) 3
+3 (t 2) 4
+1 (c- 0) 4
+Regions 1
+interior 0 0
+AngleBounds 10 120
+SizeTable 2
+interior 0.4
+boundary 0.2
+\end{code}
+

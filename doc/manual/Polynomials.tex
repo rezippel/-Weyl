@@ -1,0 +1,525 @@
+% -*- Mode: LaTeX -*-
+% $Id: Polynomials.tex,v 1.3 1995/04/18 18:36:00 rz Exp $
+\chapter{Polynomial Rings}
+\label{Polynomial:Chap}
+
+Polynomial rings are domains that consist of polynomials in some
+number of variables over a coefficient domain, \eg, $\Z[x, y]$,
+$\R[x]$, $\Q((t))[x]$.  In these three cases the coefficient domains
+are the rational integers $\Z$, the real numbers $\R$ and the ring of powerseries
+in $t$, respectively.  Polynomial rings are created using the function
+\keylisp{get-polynomial-ring}.
+
+\begin{genericdef}{get-polynomial-ring}{coefficient-domain list-of-variables}
+{\em Coefficient-domain} is must be a ring.  {\em List-of-variables}
+is a list of general expressions or other objects that can be coerced
+into general 
+expressions.   The resulting polynomial ring will have as independent
+variables the ``kernels'' that appear in {\em list-of-variables}.  In the
+most common case, {\em list-of-variables} is a list of variables.
+However, it is occaisionally useful to include in {\em
+list-of-variables} and expression like $x^3+y$, in which case the
+variables of the ring will include $x$ and $y$.  No
+check is made to ensure that the elements of {\em list-of-variables}
+are algebraically independent.
+\end{genericdef}
+
+For instance, the rings $\Z[x,y]$ and $\R[x]$ can be constructed as
+follows.
+\begin{code}
+> (setq ring1 (get-polynomial-ring (get-rational-integers) '(x y)))
+Z[x, y]
+
+> (setq ring2 (get-polynomial-ring (get-real-numbers) '(x)))
+R[x]
+\end{code}
+Recall that the ``{\sf get-}'' functions endeavor to return a ring
+that already exists that matches the requirements of its
+arguments.  Thus in the following example, despite the fact that a general
+expression is returned instead of a Lisp expression the same ring is
+returned as before.
+\begin{code}
+> (setq ring3 (get-polynomial-ring (get-real-numbers) 
+                                   (list (coerce 'x *general*))))
+R[x]
+
+
+> (eql ring2 ring3)
+T
+\end{code}
+
+Three different rings that are isomorphic to $\Z[x, y]$ can be created
+using Weyl.  In addition, to {\sf ring1}, we can generate the rings
+$\Z[y, x]$ and $\Z[x][y]$ and $\Z[y][x]$:
+\begin{code}
+> (setq ring4 (get-polynomial-ring (get-rational-integers) '(y x)))
+Z[y, x]
+
+> (setq ring5 (get-polynomial-ring 
+                 (get-polynomial-ring (get-rational-integers) '(x))
+                 '(y)))
+Z[x][y]
+
+> (setq ring6 (get-polynomial-ring 
+                 (get-polynomial-ring (get-rational-integers) '(y))
+                 '(x)))
+Z[y][x]
+\end{code}
+Each of these rings are different and in general their elements cannot
+be combined using arithmetic operations.  Notice that in the last two
+examples, the coefficient domain of the polynomial ring is itself a
+polynomial ring. 
+
+Notice that following form also specifies the ring {\sf ring1}.  This
+illustrates that if the list of variables to
+\keylisp{get-polynomial-ring} include complex expressions, Weyl will
+determine the kernels in the expressions and use them.
+\begin{code}
+> (setq ring7 (get-polynomial-ring (get-rational-integers) (list (+ 'x 'y))))
+Z[x, y]
+
+> (eql ring1 ring7)
+T
+\end{code}
+
+As an example of creating a ring with algebraically dependedent,
+independent variables we have the following.  This is really a bug and
+should be fixed in the future. 
+\begin{code}
+> (get-polynomial-ring (get-rational-integers) (list 'x (expt 'x 1/3)))
+Z[x, x^1/3]
+\end{code}
+
+\section{Information About Variables}
+
+The variables of a polynomial ring have three different
+representations: as a polynomial, as symbol, or as a {\sl variable
+index\/}.  The simplest representation is as a symbol.  These are the
+symbols passed to \keylisp{get-polynomial-ring} and are the only mechanism the
+user has to influence the external printed representation of the
+variable.  Internal to the polynomial package, there are (Lisp) integers
+associated with variables.  These integers are used as indices into
+tables and to indicate the ordering of variables in multivariate
+polynomials.  Finally, a variable can be represented as a polynomial.
+
+Regardless of the internal representation used for polynomials, there
+is an integer associated with each variable of the polynomial.  These
+numbers are used as an index into all data structures that hold
+additional information about the variable.  The index corresponding to
+a variable is obtained by the generic function \keylisp{variable-index}.
+The variable corresponding to an order number is \keylisp{variable-symbol}.
+
+\begin{functiondef}{variable-index}{domain variable}
+Returns the variable index corresponding to {\em variable}.  {\em
+Variable} can be either a symbol or a polynomial.
+\end{functiondef}
+
+\begin{functiondef}{variable-symbol}{domain variable}
+Returns the variable symbol corresponding to {\em variable\/}.  {\em
+Variable} can be either an integer or a polynomial.
+\end{functiondef}
+
+There is a property list associated with each variable in a polynomial
+ring.  This property list is ``ring'' specific and not global.  The
+ring property list is accessed using the generic function
+\keylisp{get-variable-property}.  Properties can modified using
+\keylisp{setf}, as with normal property lists.
+
+\begin{functiondef}{get-variable-property}{domain variable property}
+Returns a {\em property} property of {\em variable\/}.
+\end{functiondef}
+
+In contrast with normal mathematical usage, the polynomial rings of
+Weyl can be modified in a limited fashion after they have been
+created.  In particular, it is possible to add variables to a
+polynomial ring, although removing variables is not allowed.  Variables
+are added to the end of the ring's list of variables so that they
+will be less ``main'' than any of the existing variables, and thus only
+minimal changes to existing polynomial representations will be needed.
+
+\begin{methoddef}{add-new-variable}{ring var}
+This method applies when {\em ring} is a \keylisp{polynomial-ring}, or when its
+class inherits from \keylisp{polynomial-ring}.
+The second argument, {\em var} is a variable in the general
+representation, or something that can be coerced into a general
+expression.  This function 
+modifies {\em ring} to have an addition variable.
+\end{methoddef}
+
+The behavior of this routine is illustrated by the following examples.
+First, we create a polynomial ring with two variables, and then add a
+third variable to it.
+\begin{code}  
+> (setq R (get-polynomial-ring (get-rational-numbers) '(x y)))
+Q[x, y]
+  
+> (add-new-variable R 'z)
+Q[x, y, z]
+\end{code}
+
+\noindent
+Now try adding a more complex expression to the ring.  In this case,
+\keylisp{add-new-variable} determines that {\sf w} and {\sf sin(z+x)}
+are the only new kernels and adds them.
+\begin{code} 
+> (add-new-variable R (expt (+ 'x 'w (sin (+ 'x 'z))) 3))
+Q[x, y, z, w, sin(z + x)]
+\end{code}
+
+\section{Polynomial Arithmetic}
+\label{Poly:Arith:Sec}
+  
+The simplest way to create a polynomial is to coerce a general
+expression into a polynomial ring. For instance, if {\sf R} is the
+ring $\Q[x, y]$,  as defined above, we could proceed as follows.  First,
+we create a polynomial in $x$ and $y$ as general expressions.
+\begin{code}
+> (expt (+ 'x 'y) 3)
+(y + x)^3
+\end{code}
+  
+\noindent
+Notice that the expressions is not expanded. Next, we coerce the
+expression into the polynomial ring {\sf r}.
+\begin{code}
+> (coerce (expt (+ 'x 'y) 3) R)
+x^3 + 3 y x^2 + 3 y^2 x + y^3
+\end{code}
+  
+This time the expression is expanded. When represented as an element
+of a polynomial ring, as opposed to being general expressions,
+polynomials are represented using a canonical representation (as
+described in \sectref{Poly:Structure:Sec}). This canonical
+representation expresses polynomials as a sum of terms. This is easily
+seen in the following example.
+\begin{code}
+> (setq p (+ (* (- 'x 'y) (+ 'x 'y)) (expt 'y 2)))
+(-1 y + x) (y + x) + y^2
+\end{code}
+
+General expressions can represent polynomials as products of sums, and
+thus do not have a canonical representation for the polynomial. When
+the expression is coerced into a polynomial ring, the products are
+expanded to produce a simple form for the expression.
+\begin{code}  
+> (coerce p R)
+x^2
+\end{code}
+
+
+\section{Polynomial Operators}
+\label{Operate:Poly:Sec}
+
+\begin{functiondef}{scalar?}{polynomial}
+The argument of this function is expected to be an element of a
+polynomial domain.  If the argument is an element of the coefficient
+field this function returns {\sf T} otherwise it returns {\sf nil}
+\end{functiondef}
+
+\begin{functiondef}{degree}{polynomial var}
+Returns the degree of {\em polynomial} in the variable {\em var} as a
+lisp integer.
+\end{functiondef}
+
+The usual arithmetic operations including \keylisp{plus},
+\keylisp{minus}, \keylisp{difference}, \keylisp{times},
+\keylisp{quotient}, \keylisp{recip} and \keylisp{expt}, can be applied
+to polynomials.  For polynomial rings, \keylisp{expt} is restricted to
+integer exponents.
+
+\begin{functiondef}{remainder}{x y}
+Computes the polynomial pseudo-remainder of {\em x} and {\em y}.
+\end{functiondef}
+
+\begin{functiondef}{gcd}{x y}
+Computes the polynomial greatest common divisor of {\em x} and {\em
+y}.  The variable \keylisp{weyli::poly-gcd-algorithm} is bound to the
+particular GCD algorithm to be used.
+\end{functiondef}
+
+\begin{functiondef}{partial-deriv}{polynomial var}
+This function takes the partial derivative of {\em polynomial} with
+respect to {\em var\/}.  {\em var} is actually a polynomial, not the
+lisp object which is the variable
+\end{functiondef}
+
+\begin{functiondef}{deriv}{polynomial var \rest vars}
+Computes the derivative of {\em polynomial} with respect to {\em var}.
+This is done for {\em var} and each element of {\em var\/}.  The
+variables can either be elements of \keylisp{*general*} or of a
+polynomial domain.
+\end{functiondef}
+
+\begin{functiondef}{coefficient}{polynomial var \optional{} degree}
+Compute the coefficient of the monomial in {\em var} of order {\em
+degree} in {\em polynomial}.  {\em degree} defaults to $1$.
+\end{functiondef}
+
+\begin{functiondef}{substitute}{value var polynomial}
+Substitutes {\em value} for each occurrence of {\em var} in {\em
+polynomial\/}.  If {\em value} is a list, it is interpreted as a set
+of values to be substituted in parallel for the variables in {\em
+var\/}.  The values being substituted must be either elements of the
+domain of {\em polynomial} or its coefficient domain.
+\end{functiondef}
+
+\begin{functiondef}{list-of-variables}{polynomial \optional{} vars}
+Returns a list of the variables that actually appear in {\em polynomial}.
+If provided {\em vars} must be a list.  The variables that appear in
+{\em polynomial} are added to {\em vars}.
+\end{functiondef}
+
+\begin{functiondef}{interpolate}{vars points values \optional degrees}
+
+Uses the information provided to produce a polynomial
+whose values at each of the specified points is the
+corresponding value.  The variables of the polynomials
+are indicated by {\em vars}.  For a univariate interpolation,
+{\em vars} should be a single variable and {\em points} and {\em values}
+should be simple lists.  In this case the degree of the
+interpolated polynomial will be less than the length
+of {\em points}. For multivariate polynomials, {\em points}
+and {\em values} are lists of lists, where each of the sub-lists
+has the same length as the number of {\em variables}. The
+degree bounds for the multivariate polynomial can be
+specified by the {\em degrees} argument. It can be either
+a list of the maximum degrees in each of the variables,
+or the symbols {\sf :total} or {\sf :maximum}.  In either of these
+two cases, {\sf interpolate} uses the maximum degree bound
+that yields a polynomial with fewer terms than the number
+of points supplied. When {\sf :maximum} is specified it is
+assumed that each variable can attain the maximum degree
+independently. So for two variables with a maximum of
+10 terms, the possible terms of the returned polynomial
+are:
+\[
+1, x, y, xy, x^2, x^2 y , x y^2.
+\]
+When {\sf :total} is specified, with the same parameters, the possible
+terms are: 
+\[
+1, x, y, x^2, xy, y^2, x^3, x^2y, xy^2, y^3.
+\]
+\end{functiondef}
+
+\begin{functiondef}{interpolate}{domain Bp degree-bounds}
+
+The {\em domain} should be \keylisp{multivariate-polynomial-ring}.
+The {\em Bp }is the name of the function representing
+the black box, that is, the function should return the
+value of the polynomial at the requested point. The
+{\em degree-bounds} is the list of degree bounds for
+the multivariate polynomial in each of the ring variables
+of the domain. The function will return the multivariate
+polynomial computed using the probabilistic sparse multivariate
+interpolation algorithm given in the book by Zippel.
+\end{functiondef}
+
+\section{Differential Rings}
+\label{DifferentialRings:Sec}
+
+Differential rings are polynomial rings that have {\em derivations\/}.  A
+derivation of a differential ring $R\langle x\rangle$ is a map $\delta$ from
+$R\langle x\rangle$ to $R\langle x\rangle$ which has the following properties:
+\[
+\begin{eqalign}
+  \delta (ap+bq) &= a \,\delta p + b \,\delta q\\ \delta a &= 0\\ \delta
+(p q) &= p\,\delta q + q \,\delta p
+\end{eqalign}
+\]
+where $a, b \in R$ and $p$ and $q$ are not elements of $R$.
+
+\begin{functiondef}{get-differential-ring}{domain variables}
+Return a differential ring whose coefficients lie in {\em domain} and
+which contains the variables {\em variables}.  For example:
+\begin{code}
+> (setq R (get-differential-ring (get-rational-integers) '(x y)))
+Z<x, y>
+\end{code}
+\end{functiondef}
+
+\begin{functiondef}{derivation}{p}
+Returns the derivative of the differential polynomial {\em p\/}.  For
+example:
+\begin{code}
+> (setq p (expt (+ (coerce 'x r) (coerce 'y r)) 2))
+x^2 + 2 y x + y^2
+
+> (deriv p)
+(2 D{x, 1} + 2 D{y, 1}) x + ((2 D{x, 1} + 2 D{y, 1}) y)
+\end{code}
+\end{functiondef}
+
+\begin{functiondef}{variable-derivation}{domain variable}
+Returns the derivative of {\em variable\/}. The derivative can be
+either an element of {\em domain}, or {\em :generate} which indicates
+that the derivative will be a new variable which is yet to be created.
+
+The derivative of a variable can be set using {\em setf}.
+\end{functiondef}
+
+\section{Structure Types for Polynomials}
+\label{Poly:Structure:Sec}
+
+{\em This section discusses the internal structures used represent
+polynomials. This material is only of value for those problems that
+require especially efficient access to the low level polynomial
+primitives in Weyl. }
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{PolyClasses.eps scaled 500}
+\end{center}
+\caption{Polynomial Class Structure\label{PolyElt:Fig}}
+\end{figure}
+
+Polynomials are represented using one of three different
+structure types. The class structure of these types is given in
+\figref{PolyElt:Fig}.  The simplest structure is only used by elements of
+univariate polynomial rings and is called \keylisp{weyli::upolynomial}s.
+Two different representations are provided for multivariate
+polynomials.  The \keylisp{weyli::mpolynomial} structure type uses a
+recursive structure, so polynomials can be views as univariate
+polynomials with polynomial coefficients.  This is the classical
+representation used by systems like Macsyma.  The
+\keylisp{weyli::epolynomial} structure is represents polynomials as a
+set of pairs of exponent vectors and coefficients.
+
+In all three cases, instances of the the polynomial class include a
+slot called form, in which the data representing the polynomial is
+kept. These lower level data structures are what is actually passed
+between low level polynomial routines. For univariate polynomials the
+form slot contains a vector of the polynomial's coefficients.
+Instances of \keylisp{weyli::mpolynomial} contain a recursive list
+structure while instances of \keylisp{weyli::epolynomial} contain a
+sorted list of the polynomial's monomials with non-zero
+coefficients. For efficiency the internal code used by the more
+complex algorithms uses these internal structures, not instances of
+the polynomial classes. The algorithms themselves however, accept
+their arguments and return values that are instances of the polynomial
+classes. This approach couples maximum system flexibility with
+efficient representations when needed.
+  
+Throughout the remainder of this section we will refer to the classes
+of these polynomials without the ``{\sf weyli::}'' prefix for succinctness.
+
+\subsection{Multivariate Polynomials}
+\label{MultPoly:Rep:Sec}
+
+There are two basic representations of polynomials, ``recursive'' and
+``expanded.''  The difference between these two is illustrated by the
+polynomial
+\[
+x^3 + x^2(y+3z^3) + xy^3 + y^4,
+\]
+which is given in recursive form, and by
+\[
+x^3 + x^2y + 3x^2 y^3 + xy^3 + y^4,
+\]
+in expanded form. Both of these forms express the polynomial as a sum
+of terms. The expanded polynomial is a somewhat simpler representation
+since it consists of a sum of monomials in all of the variables.
+\sectref{ExpPoly:Rep:Sec} is devoted to this representation.
+  
+The recursive representation uses terms that are products of $x$ to
+some power times a polynomial in the remaining variables. This
+coefficient is then represented recursively as a sum of terms in $y$
+with coefficients in the remaining variables. The details of the
+representation also depend on the variable order chosen. In the
+example given above, we have chosen the variable ordering $x$, $y$,
+$z$.  If we had chosen $z$, $y$, $x$, the polynomial would have the
+following form:
+\[
+z^3(3x^2) + (y^4 + y^3(x) + y(x^2) + x^3).
+\]
+  
+Multivariate polynomials are implemented using three different levels
+of structure. First, there is the \keylisp{mpolynomial} structure
+type. 
+
+
+\subsection{Expanded Polynomials}
+\label{ExpPoly:Rep:Sec}
+
+For some important algorithms, especial those of commutative algebra
+that are based on the Gr\"{o}bner basis algorithm, it is convenient to
+represent a polynomial as a sorted list of monomials.
+  
+As in the previous section we assume that we are
+representing polynomials in the ring $k[x_1, \ldots, x_n]$, $k$ is
+assumed to be a ring.
+
+The monomials of an \keylisp{epolynomial} are represented by a
+(simple) vector of $n+1$ elements. The first component of the vector
+contains the coefficient of the monomial. The remaining components
+contain the exponents of the variables, represented as Lisp fixnums.
+  
+Associated with each \keylisp{epolynomial} is a function that orders
+the monomials. These functions can be provided by the user, but it is
+usually preferable to let Weyl create them since Weyl's version is
+usually the most efficient. A selection of ordering function can be
+produced by the following function
+
+\begin{functiondef}{weyli::make-comparison-fun}{n list-of-vars \key
+(total? nil) (new? nil) (reverse? nil)} 
+Returns a function that can be used to order the monomial structures
+used by epolynomials.  {\em n} is the number of variables in the ring, or
+equivalently, one more then the length of the vectors used to
+represent the monomials.  {\em list-of-vars} is a list of the indices from $1$
+to {\em n} in the order in which the corresponding exponents should be
+examined. If {\em total?} is specified, then the total degree of the
+monomial will be tested before the individual exponents.  {\sf
+weyli::make-comparison-fun} tries to reuse functions that  were
+previously created. If {\em new?} is specified, this is not done and a
+new function is generated. This is usually only necessary for
+debugging purposes. 
+\end{functiondef}
+
+When special orderings of the variables are not needed and one of the
+standard variable orderings is used, the following function is often
+more convenient.
+
+\begin{functiondef}{weyli::get-comparison-fun}{n type}
+Returns a function that can be used as to order the monomial
+structures used by \keylisp{epolynomial}s.  $n$ is the number of
+variables ion the ring, or equivalently, one more than the length of
+the vectors used to represent the monomials.  {\em type} is one of the
+keywords given the table below.
+\begin{center}
+\begin{tabular}{lp{4in}}
+{\tt :lexical} & Lexical monomial ordering \\
+{\tt :revlex} & Reverse lexical monomial ordering \\
+{\tt :total-lexical} & Monomials are ordered by their total degree.
+If they have the same total degree then the lexical ordering is used
+to break ties. \\
+{\tt :total-revlex} & Monomials are ordered by their total degree.
+If they have the same total degree then the reverse  lexical ordering
+is used to break ties. 
+\end{tabular}
+\end{center}
+\end{functiondef}
+
+Expanded polynomials are created using the following function.  Notice
+that its argument pattern is slightly different from that used to
+create univariate and recursive multivariate polynomials.  It is also
+necessary to provide a term ordering function, such as one returned by
+\keylisp{weyli::get-comparison-fun}.
+
+\begin{functiondef}{weyli::make-epolynomial}{domain greater-fun
+poly-form}
+Generates an instance of an {\sf epolynomial} in {\em domain}.  The
+terms of the resulting polynomials are sorted using {\em greater-fun}.
+The argument {\em poly-form} can be any object that can be coerced
+into the ring {\em domain}.
+\end{functiondef}
+
+
+\subsection{Univariate Polynomials}
+\label{UniPoly:Rep:Sec}
+
+Univariate polynomials are the simplest representation of polynomials
+used by Weyl and are only intended for special, performance intensive
+reasons.  Their existence should not be visible to the user.
+Nonetheless, for certain algorithms significant performance
+improvements can be achieved through their use.
+

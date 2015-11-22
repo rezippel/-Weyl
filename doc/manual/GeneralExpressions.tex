@@ -1,0 +1,441 @@
+% -*- Mode: LaTeX -*-
+% $Id: GeneralExpressions.tex,v 1.2 1995/02/07 23:46:57 rz Exp $
+\chapter{General Expressions}
+\label{General:Chap}
+
+Most sophisticated computations using Weyl take place within one of
+the more specialized domains discussed in the later chapters.
+Generally, these domains deal with algebraic structures like groups,
+rings and fields.  Unfortunately, none of these structures can deal
+with all types of mathematical objects. For instance, while vectors
+can be elements of vector spaces, there is no algebraic domain that
+contains both vectors and polynomial.  Similarly, there is no
+algebraic domain that can deal with special functions, summations,
+products etc. What is required is a domain that can represent
+mathematical objects {\em syntactically}.  This is dealt with in Weyl
+by the general-expression domain.
+  
+General expressions are intended to be flexible enough to represent
+any mathematical expression that one might write on a piece of
+paper. On paper one can write the two distinct expressions $a(b+c)$
+and $ab + ac$, even though as polynomials they are equivalent.  Within
+the polynomial domain discussed in \chapref{Polynomial:Chap}, these
+two expressions are indistinguishable. However, as general expressions
+they are distinct objects that can be differentiated.
+  
+While, general expressions are extremely flexible, they are not
+necessarily very efficient. As a consequence, for large scale
+computations it is usually preferable to use one of the special
+purpose domains described in the later sections. While some
+computations are purely algebraic and need never reference general
+expressions, most engineering and scientific computations need a place
+to store information about the dimensions of variables, defining
+relationships and so on. These purposes are also served well by the
+general expression structures.
+  
+  
+\section{Class Structure}
+\label{ClassStruct:Gen:Sec}
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{GeneralExpressions.eps scaled 500}
+\end{center}
+\caption{General Expressions\label{GeneralExpression:Fig}}
+\end{figure}
+
+The general expression domain is an instance of the class
+general-expression. An instance of this class is always bound to the
+variable {\sf *general*}.  The class structure of the general
+expression class is shown in \figref{GeneralExpression:Fig}.
+  
+The class \keylisp{non-strict-domain} is used as a special
+indicator that any operation that can syntactically
+be applied to arguments of this domain should be allowed
+to proceed. This matches the view that general expressions
+are syntactic objects, and do not adhere to any strict
+algebraic structure. The \keylisp{has-memoization} class provides
+the data structures required to support memoizing code
+(see the definition of \keylisp{memoize} in \sectref{Memoization:Sec}). 
+  
+The general expression domain is initialized by the function
+\keylisp{reset-domains}, which creates a new general expression domain
+and deletes all references to other domains in Weyl.
+  
+\begin{figure}
+\begin{center}
+\BoxedEPSF{GenExprElts.eps scaled 500}
+\end{center}
+\caption{Classes of General Expression
+Elements\label{GenExprElts:Fig}}
+\end{figure}
+
+The class structure of elements of the general expression
+domains are shown in \figref{GenExprElts:Fig}.
+  
+
+\section{Variables}
+
+Variables are have the following form 
+
+
+\begin{functiondef}{ge-variable?}{x}
+Returns {\sf T} if {\em x} is a general expression that is a variable.
+\end{functiondef}
+
+\begin{functiondef}{add-subscripts}{var \rest subscripts}
+Creates a new variable, which has the subscripts indicated.  If the
+variable already has subscripts, then the new subscripts are appended
+to the ones already present.
+\end{functiondef}
+
+All variables have property lists which can be used to store important
+information about them.  This information is not attached to the
+variables, but to the domain from which the variables arise.
+
+\begin{functiondef}{get-variable-property}{domain var key}
+Returns the {\em key} property of {\em var}.  A return value of {\sf
+nil} indicates that the was no {\em key} property associated with {\em
+var\/}.  New properties may be established by using \keylisp{setf} on this
+form.  
+\end{functiondef}
+
+Dependencies of one variable on another can be declared using {\sf
+declare-dependencies}:
+
+\begin{functiondef}{declare-dependencies}{kernel \rest vars}
+This indicates that {\em kernel} depends upon each of the variables in
+{\sf vars\/}.
+\end{functiondef}
+
+\begin{functiondef}{depends-on?}{exp \rest vars}
+This predicate can be applied to any expression, not just to
+variables.  It returns {\sf t} if the {\em exp} depends on {\em all}
+of the variables in {\em vars}, otherwise it returns {\sf nil}.  The
+expression can also be a list, in which case {\sf nil} is returned
+only if every element of {\em exp} is free of {\em vars}. 
+\end{functiondef}
+
+\begin{functiondef}{different-kernels}{exp list-of-kernels}
+Returns a list of the kernels in {\em exp} that are different from
+those in {\em list-of-kernels\/}.
+\end{functiondef}
+
+\section{Numbers}
+
+Should say something intelligent here.  In particular need to deal with
+arbitrary precision floating point numbers as well as the IEEE floating
+point standards.  At the moment, we just accept floating point numbers
+however they are printed out.
+
+\section{Operators}
+The basic boolean operations are supported:
+\begin{center}
+\begin{tabular}{ll}
+$a+b+c$ & {\tt (+ a b c)} \\
+$a - b$ & {\tt (+ a b)} \\
+$-a$ & {\tt (- a)} \\
+$ab$ & {\tt (* a b)} \\
+$a/b$ & {\tt (/ a b)} \\
+$a^b$ & {\tt (expt a b)}
+\end{tabular}
+\end{center}
+
+In addition the standard special functions are supported
+log
+sin cos tan cot sec csc
+sinh cosh tanh coth sech csch
+
+\section{Tools for General Expressions}
+
+Weyl provides a number of programming tools that make writing symbolic
+programs simpler.  This section discusses some of these tools. 
+
+\subsection{Display tools}
+\label{DisplayTools:Sec}
+
+\begin{functiondef}{print-object}{exp stream}
+This method is provided for all CLOS instances.  It is used whenever
+an object is printed using \keylisp{princ} or a related function.  In
+Weyl, a {\sf print-object} method is provided for classes of objects to
+make the objects more readable when debugging or when doing simple
+computations.  The printed form produced by {\sf print-object} cannot
+be read to produce the object again (as can be done with lists and some
+other Lisp expressions.
+\end{functiondef}
+
+\begin{functiondef}{display}{expr \optional (stream {\sf *standard-output*})}
+Prints the expression {\em expr} onto {\em stream}.  If stream a
+graphics stream then a two dimension display will be used (not
+yet implemented), otherwise some textual display will be used.
+\end{functiondef}
+
+\subsection{Simplification Tools}
+
+\begin{functiondef}{simplify}{expr}
+Performs simple simplifications of {\em expr}, $0 + x \rightarrow x$
+and so on.
+\end{functiondef}
+
+\begin{functiondef}{expand}{exp}
+Replaces all products of sums in {\em exp} by sums of products.
+\end{functiondef}
+
+\begin{functiondef}{ge-equal}{x y}
+Returns {\sf T} if {\em x} and {\em y} are syntactically identical
+general expressions.
+\end{functiondef}
+
+\begin{functiondef}{ge-great}{x y}
+To speed up operations like simplification of expressions, an order is
+placed on all expressions in the general representation.  This
+ordering is provided by the function \keylisp{ge-great}.
+\end{functiondef}
+
+\begin{functiondef}{def-ge-operator}{operator \rest
+keyword-expr-pairs} 
+When a new operator is introduced this definer should be used.  It
+allows one to define the simplifier, display and equality tester
+functions.
+\end{functiondef}
+
+\begin{functiondef}{deriv}{exp var \rest vars}
+Computes the derivative of {\em exp} with respect to {\em var} and
+simplifies the results.  This is done for {\em var} and each element
+of {\em var\/}.  Thus the second derivative of {\em exp} with respect
+to {\sf T} could be computed by: {\sf (deriv {\em exp} 't 't)}.
+\end{functiondef}
+
+
+\section{Functions}
+\label{Functions:Sec}
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{FunClasses.eps scaled 500}
+\end{center}
+\caption{Function Classes\label{FunctionClass:Fig}}
+\end{figure}
+
+There are three different types of functions as illustrated in
+\figref{FunctionClass:Fig}, \keylisp{sampled-function}s,
+\keylisp{ge-function}s and \keylisp{applicable-function}s.  Each of
+these represent functions about which different aspects are known. To
+represent ``well-known'' functions, like sine, cosine and $f$ (in the
+expressions $f(x)$), we use instances of the class
+\keylisp{ge-function}.  We are given only these functions
+names. Sometimes we know more about the functions, like their
+derivative or their expansion as a power series. This additional
+information is placed on their property lists.
+  
+\keylisp{applicable-function}s are functions for which we have a
+program for computing their values. They are essentially
+$\lambda$-expressions.  Finally, \keylisp{sampled-function}s are
+functions about which we know only their graph.  That is, we are given
+the values of the function at certain points and mechanisms for
+interpolating those values.  Each of these types of functions are
+described in more detail in the following sections.
+  
+Each class that inherits from \keylisp{abstract-function} includes a
+slot that indicates the number of arguments an instance of this class
+(\ie, functions) accepts. This information can be accessed using the
+method \keylisp{nargs-of}.
+  
+\begin{functiondef}{nargs-of}{abstract-function}
+Returns the number of arguments accepted by {\sf abstract-function}.
+\end{functiondef}
+  
+  Each of these types of functions can be applied to
+arguments to get the value of the function at that point.
+This can be done by either of the following two functions,
+which are extensions of the usual Lisp ones (and continue
+to work with Lisp arguments).
+  
+\begin{functiondef}{funcall}{fun arg$_1$ arg$_2$ $\ldots$ arg$_n$}
+Apply fun to the specified arguments.  If the number of arguments
+provided does not match the number of arguments of the function, then
+an error is signaled.
+\end{functiondef}
+  
+\begin{functiondef}{apply}{fun arg$_1$ arg$_2$ $\ldots$ arg$_n$ list}  
+Apply {\em fun} to the $k$ arguments specified and the elements
+of {\em list}.  If the number of arguments of the function
+differ from $k$ plus the length of {\em list} then an error
+is signaled. 
+\end{functiondef}
+  
+\subsection{GE Functions and Applications}
+  
+The most commonly used type of function in Weyl is
+\keylisp{ge-function}.  These are functions with ``well-known ``
+names.  The easiest way to generate examples of \keylisp{ge-function}s
+is to invoke the Lisp function with the same name.  For instance,
+\begin{code}  
+> (setq appl (sin 'x))
+sin(x)
+\end{code}
+  
+\noindent
+This expression $\sin x$ is not a \keylisp{ge-function}, but
+a \keylisp{ge-application}. It consists of two pieces, a function
+and an argument list. These pieces can be extracted
+using the functions \keylisp{funct-of} and \keylisp{args-of}.
+  
+\begin{functiondef}{funct-of}{application}
+Returns the {\sf ge-function} in the functional position
+of {\em application}.
+\end{functiondef}
+  
+\begin{functiondef}{args-of}{application}
+Returns a list of the arguments of {\em application}.
+\end{functiondef}
+  
+For instance, using appl created above, we have
+\begin{code}
+> (funct-of appl)
+sin
+  
+> (args-of appl)
+(x)
+\end{code}
+  
+The {\sf ge-function} can be used with {\sf funcall} and {\sf apply}
+to create new applications. 
+\begin{code}
+> (funcall (funct-of appl) (expt 'y 2))
+sin(y^2)
+  
+> (apply (funct-of appl) (list 'y))
+sin(y)
+\end{code}
+  
+Like all classes that inherit from \keylisp{ge-function}, instances
+of \keylisp{abstract-function} handle the \keylisp{nargs-of} method.
+\begin{code}  
+> (nargs-of (funct-of appl))
+1
+\end{code}
+  
+In addition to information about the number of arguments accepted by a
+function, we can also indicate the function's derivative. This is
+done using the following function:
+  
+\begin{functiondef}{declare-derivative}{func args \body body}
+This form is used to define the derivative of {\em func}. The body of
+this form can do any computation it wants on the arguments of {\em
+func}. For instance, the derivative of sin and cosine are defined as
+follows: 
+\begin{code}
+(declare-derivative sin (x) var 
+  (* (deriv x var) (cos x)))
+
+(declare-derivative cos (x) var
+  (* (- (deriv x var)) (sin x)))
+\end{code}
+\end{functiondef}
+  
+With these definitions, which are already in Weyl, derivatives of
+general expressions involving sine and cosine can be performed:
+\begin{code}  
+> (deriv (* (sin 'x) (cos 'x)) 'x)
+(cos(x))^2 - (sin(x))^2
+\end{code}
+  
+\subsection{Applicable functions}
+  
+Applicable functions are a mechanism to enable manipulation of
+anonymous functions. In languages like Scheme and Common Lisp they
+correspond to $\lambda$-expressions. One of the useful features of
+Weyl is that one can perform arithmetic operations on functions. This
+often forces us to produce applicable functions. For instance,
+\begin{code}
+> (+ (funct-of (sin 'x)) (funct-of (cos 'x)))
+(lambda (v.1) sin(v.1) + cos(v.1))
+\end{code}
+  
+To explicitly create an applicable function, the function
+\keylisp{make-applicable-function} is used.
+  
+\begin{functiondef}{make-applicable-function}{args body}
+Create an applicable function. The variables used
+in {\em args} are replaced by newly generated variables, and
+the uses of the variables in {\em body} are similarly replaced.
+\end{functiondef}
+
+Like other functions, one can differentiate applicable functions.
+  
+\begin{functiondef}{deriv}{function integer1 integer2 $\ldots$}
+Returns the function obtained by taking the positional
+derivative of function with respect to the given positions.
+\end{functiondef}
+  
+For example,
+\begin{code}  
+> (setq f1 (make-applicable-function '(x y) (+ (* 'x 'y) (* 'y 'y))))
+(lambda (v.1 v.2) v.1 v.2 + v.2^2)
+  
+> (deriv f1 1)
+(lambda (v.1 v.2) v.2)
+  
+> (deriv f1 2)
+(lambda (v.1 v.2) v.1 + 2 v.2)
+  
+> (deriv f1 2 1)
+(lambda (v.1 v.2) 1)
+\end{code}
+  
+A more significant example of the use of the applicable functions
+arises in the specification of the Lagrangian in mechanics. Recall
+that the Lagrangian of a mechanical system is defined as the
+difference of the kinetic and potential energies of the system. So for
+a point mass constrained to one dimension, we have a Lagrangian of
+\[
+L = KE + PE = \frac{m \dot{x}^2}{2} - gx,
+\]
+where $x$ is the position of the point, $m$ is the mass
+of the point and $g$ is the acceleration due to gravity.
+
+The Lagrangian can be viewed as a map from phase space to action, where
+each point of phase space specifies a position $x$ and a
+velocity. Alternatively, it can be viewed as a map from the space of
+all possible paths of the particle to functions from time to
+action. This second interpretation is the most appropriate one for the
+calculus of variations and the Lagrangian formulation of mechanics. In
+Weyl, a single function will suffice:
+  
+\begin{code}
+> (defun point-lagrangian (x &optional (xdot (deriv x 1)))
+    (- (* 1/2 'm xdot xdot) (* 'g x)))
+\end{code}
+  
+If both the position and velocity are specified, the result is a
+simple computation of the action of the particle:
+\begin{code}
+> (point-lagrangian 1 2)
+2m - g
+\end{code}
+
+\noindent
+However, one can also pass the function the path
+that the particle takes:
+\begin{code}
+> (setq action (point-lagrangian 
+                 (make-applicable-function '(t) (+ 't (sin 't)))))
+(lambda (v.1) -1 v.1 g - ((sin(v.1)) g) + 1/2 (cos(v.1))^2 m
+   + 1/2 (cos(v.1)) m + 1/2 m (cos(v.1)) + 1/2 m)
+
+> (funcall a 0)
+2m
+
+> (funcall a 1)
+1/2 m (cos(1)) + 1/2 m - g - ((sin(1)) g) + 1/2 (cos(1))^2 m + 1/2 (cos(1) m
+\end{code}
+
+
+\subsection{Sampled Functions}
+  
+
+  
+
+
+

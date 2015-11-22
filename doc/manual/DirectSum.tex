@@ -1,0 +1,332 @@
+% -*- Mode: LaTeX -*-
+% $Id: DirectSum.tex,v 1.2 1995/02/07 23:46:56 rz Exp $
+\chapter{Sums, Products and Quotients of Domains}
+\label{Quotients:Chap}
+
+Let $\frak A$ be category of domains, \eg, groups, rings, fields, etc.
+Given two elements of $\frak A$, say $A$ and $B$, there are often ways
+of combining them to produce another element of $\frak A$.  This
+chapter discusses several of those techniques. 
+
+\section{Direct Sums}
+\label{Direct:Sum:Sec}
+
+Given two domains $A$ and $B$, their direct sum can be viewed as the
+set of all pairs of elements in $A$ and $B$, where arithmetic
+operations are performed component-wise.  We denote the direct sum
+of $A$ and $B$ by $A \oplus B$.  If $A$, $B$ and $C$ are domains, then
+\[
+A \oplus ( B \oplus C) = (A \oplus B) \oplus C = A \oplus B \oplus C,
+\]
+so multiple direct sums are well defined.  Direct sums are
+created using the function \keylisp{get-direct-sum}:
+
+\begin{functiondef}{get-direct-sum}{$\mbox{\em domain}_1 \ldots
+\mbox{\em domain}_n$}
+Creates a domain that is the direct sum of $\mbox{\em domain}_1,
+\ldots, \mbox{\em domain}_n$.  If any of the $\mbox{\em domain}_i$ are
+themselves direct sums, then their components are included as if they
+had been explicitly specified.
+\end{functiondef}
+
+The algebraic structure of the object returned by \keylisp{get-direct-sum}
+depends upon the type of the objects of which it is composed.  The
+following table illustrates the options.
+
+\begin{center}
+\begin{tabular}{||c|c|c||}
+\multicolumn{1}{c}{$A$} & \multicolumn{1}{c}{$B$} & 
+   \multicolumn{1}{c}{$A \oplus B$} \\ \hline
+Group & Group & Group \\ \hline
+Ring & Ring & Ring \\ \hline
+Field & Field  & Ring \\ \hline 
+Group & Ring & Group \\ \hline 
+Abelian & Abelian & Abelian \\ \hline 
+\end{tabular} 
+\end{center}
+
+The dimension of a direct sum is the number of its components:
+
+\begin{functiondef}{dimension}{direct-sum}
+Returns the number of components of the direct sum.
+\end{functiondef}
+
+To illustrate this the direct sum we can compute the direct sum of the
+real numbers, the rational numbers and the rational integers as
+follows:
+\begin{code}
+> (setq direct-sum (get-direct-sum (get-real-numbers)
+                                   (get-rational-numbers)
+                                   (get-rational-integers))
+R (+) Q (+) Z
+\end{code}
+
+The symbol used to indicate a direct sum when only
+{\sc ascii} characters are available is (+).  This domain has
+dimension 3 and it is a ring as one might expect:
+\begin{code}  
+> (dimension direct-sum)
+3
+  
+> (typep direct-sum 'ring)
+T
+  
+> (typep direct-sum 'field)
+NIL
+\end{code}
+  
+Even though some of the components of the direct sum domain are
+fields, the direct sum itself is a ring.  Individual elements of the
+direct sum can be extracted using the routine \keylisp{ref}:
+\begin{code}  
+> (ref direct-sum 0)
+R
+  
+> (ref direct-sum 2)
+Z
+\end{code}
+
+\begin{functiondef}{ref}{direct-sum i}
+Returns the {\em i}-th element (zero based) of {\em direct-sum}.  {\em
+direct-sum} can either be a direct sum domain or an element of a
+direct sum domain.
+\end{functiondef}
+  
+Elements of a direct sum domains are created using
+the following function:
+
+\begin{functiondef}{make-element}{direct-sum $\mbox{\em element}_1
+\ldots \mbox{\em element}_n$}
+ Creates an element of {\em direct-sum\/}.  The number of elements
+provided must match the dimension of {\em direct-sum\/}.  Each of the
+elements is coerced into the domain of their associated component of
+the {\em direct-sum} before the element is created.
+\end{functiondef}
+
+The following illustrates the use of elements of a direct sum.
+\begin{code}  
+> (setq x (make-element direct-sum 1 2 3))
+1 (+) 2 (+) 3 
+  
+> (+ x x) 
+2 (+) 4 (+) 6
+  
+> (* 3 x)
+3 (+) 6 (+) 9
+\end{code}
+  
+As with direct sum domains, the dimension of an element of a direct
+sum domain can be computed using dimension, and individual components
+can be determined using {\sf ref}.
+\begin{code}
+> (dimension x)
+3
+
+> (loop for i below (dimension x)
+        do (format t "~%Component ~D: ~S, domain: ~S"
+                   i (ref x i) (domain-of (ref x i))))
+Component 0: 1, domain R
+Component 1: 2, domain Q
+Component 2: 3, domain Z
+\end{code}
+
+\section{Free Modules}
+\label{FreeModules:Sec}
+  
+$M$ is a free $R$-module if $M$ is both a free abelian group and an
+$R$-module. In Weyl, elements of free modules are represented as
+$n$-tuples of elements of the coefficient domain $R$. Thus, we are
+only able to deal with finite dimensional free modules. If $n$ is the
+rank of $M$ as a free abelian group, then as a free $R$-module, $M$ is
+isomorphic to the direct sum of n copies of $R$.  Closely related to
+the concept of a free module is that of a vector space. A vector space
+is a free module whose coefficient domain is a field. Additional
+information about operations on elements of vector spaces can be found
+in \sectref{VectorSpace:Sec}.
+  
+The basic routine for creating a free module is {\sf get-free-module}.
+\begin{functiondef}{get-free-module}{ domain rank}
+Creates a free module of dimension {\em rank} where the elements'
+components are all elements of {\em domain}.  {\em domain} must be a
+ring.  If {\em domain} is a field the domain returned will be a vector
+space. 
+\end{functiondef}
+  
+If one expects the coefficient domain to be a field, and thus the
+affine module will actually be a vector space, then the routine
+\keylisp{get-vector-space} should be used instead of
+\keylisp{get-free-module}. This routine explicitly checks that the
+coefficient domain is a field and signals an error if it is not a
+field.
+  
+Once a free $R$-module has been created, it is often useful to refer
+to the domain $R$ itself. This can be done using the routine
+\keylisp{coefficient-domain-of}. The dimension of the free module can be
+obtained using \keylisp{dimension}.
+  
+\begin{functiondef}{coefficient-domain-of}{domain}
+Returns the domain of he coefficients of {\em domain}.
+\end{functiondef}
+
+\begin{functiondef}{dimension}{domain}
+This method is defined for free modules but the value returned is not
+specified. (Actually it should be infinity.)
+\end{functiondef}
+
+Elements of a free module can be created using the function
+keylisp{make-element}. The routine \keylisp{make-point} calls {\sf
+dimensions}, so that code that uses free modules as vector spaces can
+be written more euphoniously.
+  
+\begin{functiondef}{make-element}{domain value \rest values}
+Make an element of the module {\em domain}, whose first component is
+{\em value}, etc. If value is a Lisp vector or one dimensional array,
+then elements of that array are used as the components of the free
+module element.
+\end{functiondef}  
+  
+Use of these routines is illustrated below [Add something here --RZ]
+
+  
+\begin{functiondef}{ref}{vector i}
+Returns the {\em i}-th element (zero based) of {\em vector}.
+\end{functiondef}
+
+\begin{functiondef}{inner-product}{u v}
+Computes the inner (dot product) of the two vectors {\em u} and {\em
+v}. If $u = \langle u_1, \ldots u_k \rangle$ and  $v = \langle v_1,
+\ldots v_k \rangle$ then 
+\[
+\mbox{\sf (dot-product $u$ $v$)} = u_1 v_1 + u_2 v_2 + \cdots + u_k
+v_k.
+\]  
+\end{functiondef}
+
+\section{Tensor Products}
+\label{Tensor:Product:Sec}
+
+\section{Rings of Fractions}
+\label{Quotient:Field:Sec}
+
+Given an arbitrary ring $R$, we can construct a new ring, called the
+\keyi{quotient ring} of $R$, whose elements are pairs of elements in
+$R$ subject to the following equivalence relation. If $(a, b)$ and
+$(c, d)$ are elements of a quotient ring, then they are equal if and
+only if $ad = bc$. The sum and product of two elements of the quotient
+ring are defined as follows
+\[
+\begin{eqalign}
+(a, b) + (c, d) & = (ad + bc, bd), \\
+(a, b) \times (c, d) & = (ac, bd).
+\end{eqalign}
+\]
+If the ring $R$ is an integral domain then the quotient ring is
+actually a field.
+
+More generally, let $S$ be a multiplicatively closed subset of $R$. The
+localization of $R$ with respect to a multiplicative subset of $R$, $S$,
+written $S^{-1} R$, is the ring of pairs $(a, s)$, where $a$ is an
+element of $R$ and $s$ is an element of $S$.
+  
+\begin{functiondef}{make-ring-of-fractions}{domain \optional
+(multiplicative-set domain)}
+Constructs a quotient ring from {\em domain}. If a second argument is
+provided, then this {\sf make-quotient-ring} returns a ring
+representing the localization of domain with respect to {\em
+multiplicative-set}. Otherwise, the quotient ring of domain is
+returned. If {\em domain} is an integral domain, then the ring returned will
+be a field.
+\end{functiondef}
+
+
+\begin{functiondef}{make-quotient-field}{domain}
+This generic function constructs the quotient field of {\em domain\/}.
+The domain returned by this operation will be a field.  If {\em
+domain} is itself a field, then it will be returned without any
+modification.  If {\em domain} is a gcd domain then operations with
+the elements of the resulting quotient field will reduce their answers
+to lowest terms by dividing out the common gcd of the resulting
+numerator and divisor.
+
+\end{functiondef}
+
+Two special cases are handled specially by \keylisp{make-quotient}.  If
+the argument domain is either the rational integers or a polynomial
+ring then special domains of the rational numbers or rational
+functions are used.  This is for efficiency reasons.  Hopefully, a
+more general solution can be found in the near future.
+
+Two operations can be used to create elements of a quotient field:
+\keylisp{make-quotient-element} and \keylisp{quotient-reduce}.  The operation
+\keylisp{make-quotient-element} creates a quotient element from the
+numerator and denominator domains.  {\sf Quotient-reduce} does the
+same thing but removes the common GCD from the numerator and
+denominator first.
+
+(Ed: Need to think about things like localizations here.)
+
+\begin{functiondef}{get-quotient-field}{ring}
+Returns a field which is the quotient field of {\em ring\/}.  In some
+cases, this is special cased to return return something more efficient
+than the general quotient field objects.
+\end{functiondef}
+
+\begin{functiondef}{weyli::qf-ring}{qf}
+Returns the ring from which the quotient field {\em qf} was built.
+\end{functiondef}
+
+\begin{functiondef}{numerator}{q}
+Returns the numerator of {\em q\/}.
+\end{functiondef}
+
+\begin{functiondef}{denominator}{q}
+Returns the denominator of {\em q\/}.
+\end{functiondef}
+
+\begin{functiondef}{quotient-reduce}{domain numerator \optional denominator}
+{\em Numerator} and {\em denominator} are assumed to be elements of
+base ring of {\em domain\/}.  {\sf quotient-reduce} creates and
+quotient element in {\em domain} from {\em numerator} and {\em
+denominator\/}.  If {\em denominator} is not provided, the
+multiplicative unit of {\em domain} is used.
+\end{functiondef}
+
+\begin{functiondef}{with-numerator-and-denominator}{(num den) q \body
+body} 
+Creates a new lexical environment where the variables {\em num} and
+{\em den} are bound to the numerator and denominator of {\em q\/}.
+Each
+\end{functiondef}
+
+
+\section{Factor Domains}
+\label{FactorDomains:Sec}
+
+Let $B$ be a subgroup of $A$.  One can divide the elements of $A$ into
+equivalence classes as follows:  Two elements of $A$ are in the same
+equivalence class if their quotient is an element of $B$.  The
+equivalence classes of $A$ with respect to $B$ form a group, called
+the \keyi{factor group} of $A$ by $B$.  Using this construction one
+can form factor modules of one module by a submodule.  If $A$ is a
+ring and $B$ is an ideal of $A$, then the factor module of $A$ by $B$
+is a ring, called the \keyi{factor ring} of $A$ by $B$.
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{FactorDomains.eps scaled 500}
+\end{center}
+\caption{Factor Domains\label{FactorDomains:Fig}}
+\end{figure}
+
+Weyl provides four classes for dealing with factor domains, as shown
+in \figref{FactorDomains:Fig}.  The factor domain (group, module or
+ring) of $A$ and $B$ is written $A/B$.  The components of a factor
+domain may be accessed using the following routines.
+
+\begin{functiondef}{factor-numer-of}{factor-domain}
+Returns the ``numerator'' of a factor domain.
+\end{functiondef}
+
+\begin{functiondef}{factor-denom-of}{factor-domain}
+Returns the ``denominator of a factor domain.
+\end{functiondef}

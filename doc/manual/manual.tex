@@ -1,0 +1,62 @@
+% -*- Mode: LaTeX -*-
+
+\input{lcdlatex}
+
+\documentstyle[11pt,namssymbols,fullpage,cite,code,equations]{book}
+
+\input{boxepsf} \HideFigureFrames
+
+%\input{rz}
+\input{Macros}   % The interesting portions of rz.tex should be moved
+		 % to Macros
+\makeindex
+
+%\includeonly{Basics}
+
+\begin{document}
+
+\title{The Weyl Computer Algebra Substrate \\ Manual}
+
+\author{SimLab Group\thanks{This research was supported in part by the
+Advanced Research Projects Agency of the Department of Defense under
+Office of Naval Research Contract N00014--92--J--1989, the National
+Science Foundation through grant IRI--9006137, the Office of
+Naval Research through contract N00014--92--J--1839 and in part by the U.S.
+Army Research Office through the Mathematical Science Institute of Cornell
+University.} \\ 
+Cornell University \\
+Ithaca, NY 14853}
+
+\date{\today}
+
+ 
+\maketitle
+
+This page intentionally left blank.
+
+\newpage
+\setcounter{page}{1}
+
+\tableofcontents
+
+\include{Introduction}
+\include{GettingStarted}
+\include{GenericTools}
+\include{Basics}
+\include{Scalars}
+\include{GeneralExpressions}
+\include{DirectSum}
+\include{LinearAlgebra}
+\include{Polynomials}
+\include{AlgExtensions}
+\include{PowerSeries}
+\include{Topology}
+\include{Mesh}
+\include{FileFormats}
+
+\bibliographystyle{siam}
+\bibliography{abbrev,compalg,lang,scicomp,proceedings}
+
+\input{manual.ind}
+
+\end{document}

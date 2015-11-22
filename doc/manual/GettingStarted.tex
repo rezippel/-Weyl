@@ -1,0 +1,289 @@
+% -*- Mode: LaTeX -*-
+% $Id: GettingStarted.tex,v 1.3 1995/03/22 22:42:00 twilson Exp $
+\chapter{Getting Started}
+\label{Starting:Chap}
+
+Weyl is implemented as a large body of functions that extend Lisp's
+functionality to include non-numeric algebraic computations.  These
+functions can be loaded into an existing Lisp image using the tools
+described in \sectref{Creating:Weyl:Sec}.  All of Weyl's extensions
+are attached to symbols in the {\sf weyl} or {\sf weyli} packages.
+The philosophy behind these packages and how they are to be used is
+discussed in \sectref{Weyl:Packages:Sec}.  Some issues with developing
+programs using Weyl are discussed in \sectref{Weyl:Style:Sec}.  In
+\sectref{FandG:Sec} we give a simple of example what is involved
+when using Weyl.
+
+
+\section{Creating a Weyl World}
+\label{Creating:Weyl:Sec}
+
+Common Lisp does not include a {\em defsystem} facility, which is
+often used to manage the compilation dependencies between different
+files in a Lisp system.\footnote{The defsystem facility plays the same
+roles as {\tt make} files do in Unix systems-building.}  Although many
+Lisp vendors provide a defsystem, there is no standard, and
+each vendor's version differs slightly from the others.  As a
+consequence, we have chosen not to use any of them and instead include
+with Weyl a copy of Mark Kantrowitz's version.
+
+The first thing one must do to get Weyl started is to load the file
+{\sf sysdef.lisp}.  This file creates the {\sf weyl} package, where
+all of Weyl's symbols are kept, describes which files comprise the
+Weyl systems, and provides a number utility functions to help manage
+the Weyl sources.  These functions are all defined in the {\sf user}
+package, which is the package in which Lisp's usually start up.  Thus
+you will probably not need to include the {\sf user::} prefix that we
+have included in this section.
+
+The function {\sf user::compile-weyl} will recompile any Weyl sources
+that need recompilation.  To load the the recompiled files use {\sf
+user::load-weyl}.  
+
+\begin{functiondef}{user::compile-weyl}{}
+Compile those Weyl source files that need recompilation.  Increment
+Weyl's minor version number.
+\end{functiondef}
+
+\begin{functiondef}{user::load-weyl}{}
+Load all binary files for Weyl and initialize Weyl's data structures.
+If Weyl has already been loaded, this function loads any binary files
+that are more recent than the ones already loaded.  This is commonly
+used as a stripped down ``{\sf load-patches}.''
+\end{functiondef}
+
+\begin{functiondef}{user::dump-weyl}{}
+Loads the current binary files for Weyl and dumps a world.
+\end{functiondef}
+
+\section{Packages}
+\label{Weyl:Packages:Sec}
+
+In Common Lisp, values and variables are attached to symbols.
+Collections of symbols are organized into {\em packages} to control
+access to the values and functions.  The symbols used by Weyl are
+contained in two Common Lisp packages, {\sf weyl} and {\sf weyli}.
+Those symbols that are intended for users are contained in the {\sf
+weyl} package and exported.  The internal routines of Weyl are
+contained in the {\sf weyli} package so that they will not interfere
+with the user's symbols.
+
+Common Lisp places all of its own symbols in the {\sf lisp} package.
+Weyl extends the functionality of certain function in Common Lisp by
+providing its own version of certain symbols from the {\sf lisp}
+package.  Weyl's version of these symbols {\em shadow} the Common Lisp
+symbols.  Among these symbols are the arithmetic functions, ($+$,
+$-$, $*$, $\ldots$), most of the mathematical functions ({\sf
+sqrt}, {\sf sin}, $\ldots$) and some of the sequence functions ({\sf
+map}, {\sf delete}, {\sf member}, $\ldots$).  The variable {\sf
+*weyli-shadowed-symbols*} contains a list of all shadowed symbols.  In
+all cases, when applied to arguments admissible to the Common Lisp
+version of the function, the Weyl versions of these functions perform
+in exactly the same fashion as the Common Lisp version.  The only
+difference is that the Weyl versions have been extended to work with
+the mathematical objects defined in Weyl.
+
+The only symbols in the {\sf weyl} package are those intended for
+users.  The internal functions and values that are maintained by the
+system itself and that are needed only by those extending Weyl are
+contained in the {\sf weyli} package.
+
+In some cases there are symbols with the same name in both the {\sf
+weyl} and the {\sf weyli} packages.  This is usually done when a
+version with more error checking is needed by users, but where such
+error checking would compromise the performance of Weyl if used
+internally where such error checking is not necessary.
+
+An example of this is the {\sf make-element} function.  When
+constructing vectors and matrices, {\sf weyl:make-element} makes sure
+that each element of the vector or matrix to be created belongs to
+the coefficient domain, and if not tries to coerce the element into
+the coefficient domain.  The function {\sf weyli::make-element} does
+not, but it is only used internally in the vector and matrix routines.
+
+Most projects that use Weyl will create their own package for their
+routines.  Because of the shadowing done by the {\sf weyl} package, if
+one simply included {\sf weyl} in the user's new package one would
+get many conflicts.  Instead one should use the function {\sf
+use-weyl-package}, which will perform the necessary shadowing.
+
+\begin{functiondef}{use-weyl-package}{package}
+Does a shadowing import of the shadowed symbols in the {\sf weyl}
+package and then makes {\em package} use the package {\sf weyl}.
+\end{functiondef}
+
+Thus a common idiom for creating a package for an new application that
+uses Weyl is 
+\begin{code}
+(unless (find-package 'Application-Package)
+  (make-package "Application-Package" :use '(lisp clos))
+  (use-weyl-package (find-package 'Application-Package)))
+\end{code}
+
+\section{Programming Style}
+\label{Weyl:Style:Sec}
+
+In many cases the symbols in the {\sf weyl} package shadow normal
+Common Lisp symbols.  When this is done, the functions in the {\sf
+weyl} package are upward compatible extensions of the Common Lisp
+ones.  For instance, the Common Lisp function {\sf lisp:expt} can
+only be applied to Lisp numbers, while the function {\sf weyl:expt}
+can be applied to polynomials, rational functions and other
+mathematical objects as well as numbers.  In all cases, the {\sf weyl}
+versions of these shadowed functions are upwardly compatible with the
+Common Lisp versions.
+
+We have adopted the convention that the name of all boolean predicates
+end with a {\sf ?}.  This is different from the convention adopted by
+Common Lisp, where most predicates end with a {\sf p}.  Thus the Weyl
+function which determines if a number is positive is {\sf plus?}, where
+the Common Lisp function is {\sf plusp}.  
+
+\section{F and G Series Computation}
+\label{FandG:Sec}
+
+In this section we show how to perform a simple algebraic calculation
+using Weyl.  Throughout this section we will use terms, such as {\em
+domains\/}, that are not yet well defined.  These terms will be defined
+in later sections.
+
+First one needs to start a Lisp image that contains Weyl.  Using
+Lucid's lisp on a Decstation we get a prompt like:
+\noindent
+\begin{code}
+;;; Lucid Common Lisp/DECsystem
+;;; Development Environment Version 4.0, 12 November 1990
+;;; Copyright (C) 1985, 1986, 1987, 1988, 1989, 1990 by Lucid, Inc.
+;;; All Rights Reserved
+;;;
+;;; This software product contains confidential and trade secret information
+;;; belonging to Lucid, Inc.  It may not be copied for any reason other than
+;;; for archival and backup purposes.
+;;;
+;;; Lucid Common Lisp is a trademark of Lucid, Inc.
+;;; DECsystem is a trademark of Digital Equipment Corp
+
+;;; Weyl Version 4.55, saved 14:38 Thursday, October 3, 1991
+
+> 
+\end{code}
+
+The first thing that should be done at this point is to type {\sf
+(user::load-weyl)} which will cause any bug fixes and improvements
+that have been created since the Lisp image was dumped was loaded, as
+illustrated below:
+\begin{code}
+> (user::load-weyl)
+;;; Loading file #P"/amd/nori/a/weyl/develop/lisp-support.mbin"
+;;; Done loading system USER::WEYL
+;;; Weyl 4.56 loaded. 
+
+> (in-package 'weyl)
+#<Package "WEYL" 1028943E>
+\end{code}
+We have also switched the {\sf weyl} package so that can easily access
+all the functions in Weyl.  We are now ready to begin.
+
+\medskip
+Computations using Weyl are usually involve first creating a set of
+domains in which to perform a computation, creating a few elements of
+these domains to initiate the computation, and then performing the
+computation itself.  This is illustrated in the following routines
+that computes the coefficients of the ``$F$ and $G$ series.''  These
+coefficients are defined by the following recurrences.
+\[
+\begin{eqalign}
+  f_0&= 0 \\
+  f_n& = -\mu g_{n-1} - \sigma(\mu + 2\epsilon){\partial
+f_{n-1} \over \partial \epsilon} + (\epsilon - 2 \sigma^2) {\partial
+f_{n-1} \over \partial \sigma} - 3 \mu \sigma {\partial f_{n-1} \over
+\partial \mu}\\
+   g_0&=1\\ g_n&= f_{n-1} - \sigma(\mu +
+2\epsilon){\partial g_{n-1} \over \partial \epsilon} + (\epsilon - 2
+\sigma^2) {\partial g_{n-1} \over \partial \sigma} - 3 \mu \sigma
+{\partial g_{n-1} \over \partial \mu}
+\end{eqalign}
+\]
+
+The resulting sequences, $f_i$ and $g_i$, are all polynomials in $\mu$,
+$\epsilon$ and $\sigma$ with integer coefficients.  Thus they lie in
+the domain $\Z[\mu, \epsilon, \sigma]$.  Thus our first task in
+computing them is to generate the domain $\Z[\mu, \epsilon, \sigma]$.
+This can be done by the following line:
+\begin{code}
+> (setf R (get-polynomial-ring (get-rational-integers) '(m e s)))
+Z[m, e, s]
+\end{code}
+
+\noindent
+It is useful to have our hands on the variables $\mu$, $\epsilon$ and
+$\sigma$.  This is done by coercing the symbols {\sf m}, {\sf e} and
+{\sf s} into the domain {\sf R}.
+\begin{code}
+> (setf mu (coerce 'm R))
+m
+> (setf eps (coerce 'e R))
+e
+> (setf sigma (coerce 's R))
+s
+\end{code}
+
+The coefficients of the first terms of the both recurrences are the
+same, so rather than computing them afresh each time, we'll store them
+in some global variables
+
+\begin{code}
+> (setq x1 (* (- sigma) (+ mu (* 2 eps))))
+- s m + -2 s e
+
+> (setq x2 (+ eps (* -2 (expt sigma 2))))
+e + -2 s^2
+
+> (setq x3 (* -3 mu sigma))
+-3 s m
+
+> (setq x4 (- mu))
+- m
+\end{code}
+\noindent
+Notice that we used the usual Lisp functions for manipulating the
+elements of {\sf R}.  Second, there is an automatic coercion from the
+integers into almost every domain we are working with, thus we could
+write {\sf (* 2 eps)} above, rather than the more explicit {\sf (*
+(coerce 2 R) eps)}.
+
+Finally, we can write out the recursion formulae.
+
+\begin{code}
+(defun f (n) 
+  (if (= n 0) (coerce 0 R)
+    (let ((fn-1 (f (1- n))))
+      (+ (* x4 (g (1- n)))
+         (* x1 (partial-deriv fn-1 eps))
+         (* x2 (partial-deriv fn-1 sigma))
+         (* x3 (partial-deriv fn-1 mu))))))
+\end{code}
+
+\begin{code}
+(defun g (n)
+  (if (= n 0) (coerce 1 R)
+    (let ((gn-1 (g (1- n))))
+      (+ (f (1- n)) 
+         (* x1 (partial-deriv gn-1 eps))
+         (* x2 (partial-deriv gn-1 sigma))
+         (* x3 (partial-deriv gn-1 mu))))))
+\end{code}
+
+And compute $f_5$ and $g_5$
+\begin{code}
+> (f 5)
+- m^3 + (-24 e + 210 s^2) m^2 + (-45 e^2 + 630 s^2 e + -945 s^4) m
+
+> (g 5)
+-30 s m^2 + (-180 s e + 420 s^3) m
+\end{code}
+
+The explicit {\sf coerce}'s in the definitions of {\sf f} and {\sf g}
+are included to ensure that {\sf f} and {\sf g} always return elements
+of the same ring.
+

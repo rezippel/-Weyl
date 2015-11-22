@@ -1,0 +1,201 @@
+% -*- Mode: LaTeX -*-
+% $Id: Introduction.tex,v 1.2 1995/03/22 22:42:02 twilson Exp $
+\chapter{Introduction}
+\label{Intro:Chap}
+
+
+In the last twenty years the algorithms and techniques for manipulating
+symbolic mathematical quantities have improved dramatically.  These
+techniques have been made available to a practitioners through a number
+of algebraic manipulation systems.  Among the most widely distributed
+systems are Macsyma \cite{Macsyma:Manual}, Reduce \cite{Reduce:Manual},
+Maple \cite{Maple:Manual} and Mathematica \cite{Wolfram88}.
+These systems are designed to be self-contained and are not intended to
+be incorporated into larger, more specialized systems.  This is at odds
+with the experience with numerical computation where libraries of
+carefully coded routines like Linpack \cite{LINPACK:Manual} and Eispack
+\cite{EISPACK:Manual} have been of the greatest value because they
+could be incorporated in larger systems (like fluid dynamics simulators
+or circuit analyzers).  Linear algebra systems like Matlab
+\cite{Matlab:Manual}, though of significant value, where developed much
+later and tend to be used more for research in linear algebra than
+as part of large computations.
+
+Another limitation of current symbolic mathematics systems is that they
+generally deal with a relatively limited and fixed set of algebraic
+types, which the user is not expected to extend significantly.  Thus it
+may be difficult for a user to experiment with algorithms for dealing
+with Poisson series if the algebra system does not already have a data
+type that matches the behavior of Poisson series.  This situation is
+exacerbated by the unavailability of the code that implements the
+algebraic algorithms of the symbolic manipulation system.  Scratchpad
+\cite{Jenks84} is a noticeable exception to this trend in that the
+developers plan to make the algebra code for the system widely
+available, and the internal data typing mechanisms provided by
+Scratchpad are designed with the extension mechanisms just mentioned in
+mind.
+
+Weyl is an extensible algebraic manipulation substrate that has been
+designed to represent all types of algebraic objects.  It deals not
+only with the basic symbolic objects like polynomials, algebraic
+functions and differential forms, but can also deal with higher level
+objects like groups, rings, ideals and vector spaces.  Furthermore, to
+encourage the use of symbolic techniques within other applications,
+Weyl is implemented as an extension of Common Lisp
+\cite{CommonLisp:Manual} using the Common Lisp Object Standard
+\cite{CLOS:Manual} so that all of Common Lisp's facilities and
+development tools can be used in concert with Weyl's symbolic tools.
+
+It should be noted that the initial implementation of Weyl is intended
+to be as clean and semantically correct as possible.  The primary goal
+of Weyl is provide the tools needed to express algebraic algorithms
+naturally and succinctly.  Nonetheless, we believe that algebraic
+algorithms can be efficiently implemented within the Weyl framework
+even though that was not a goal of the initial implementation.
+
+\section{The Domain Concept}
+\label{Domain:Concept:Sec}
+
+One of the novel concepts in Weyl is that of a {\em domain\/}.  This
+section gives three examples that illustrate the need for domains. 
+
+Consider the problem of integrating the function $1/(x^3-2)$:
+\[
+\int \frac{dx}{x^3-2} = 
+\frac{\sqrt[3]{2}}{12} \log\frac{(x - \sqrt[3]{2})^2}{x^2 +
+\sqrt[3]{2}x + \sqrt[3]{4}} + \frac{\sqrt[3]{2} \sqrt{3}}{6} 
+    \arctan\frac{- \sqrt{3} x}{2 \sqrt[3]{2} + x}.
+\]
+Notice that, although the original problem involved rational functions
+with integer coefficients ($\Z$), the final answer requires the use of
+$\sqrt{3}$ and $\sqrt[3]{2}$.  These radicals are needed to express
+the zeroes of $x^3-2$.  Sometimes, one gets lucky and all the zeroes
+lie in the ground field, \eg,
+\[
+\int\frac{dx}{x^3 -2x^2 - x +2} = \int\frac{dx}{(x-1)(x+1)(x-2)}
+ = -\frac{1}{2} \log (x-1) + \frac{1}{6}\log(x+1) + \frac{1}{3} \log(x-2),
+\]
+but often new algebraic quantities must be added.
+
+Now consider a routine called {\sf solve} that returns one of the
+zeroes of a polynomial in one variable.  Given $x^2-5$, it should
+return $\sqrt{5}$.  But how should the symbol $\sqrt{5}$ be
+interpreted, \ie, how does one know that $(\sqrt{5})^2 = 5$, and is
+$\sqrt{5}$ equal to $2.2361$ or $-2.2361$?  Furthermore, after {\sf
+solve} has been asked to solve $x^2-5$, what is returned as the
+solution of  $x^2-20$?
+Either $\sqrt{20}$ or $2 \sqrt{5}$ could be correct, although the
+latter is probably better than the former.
+
+These issues are addressed in Weyl by using \keyi{domains}.  Domains are
+collections of objects, usually with operations among the objects, that
+possess some underlying mathematical organization.  For instance, the
+set of rational integers $\Z$ is a domain, as is the set of rational
+numbers $\Q$.  The polynomials $x^2-5$, $x^2-20$ and $x^2-x-1$ could
+all be elements of the domain $\Q[x]$, the set of polynomials in $x$
+with rational number coefficients.  Other common domains are the real
+numbers, $\R$, and the complex numbers, $\C$.  On the other hand, we
+rarely think of a set of numbers, \eg, $\{ 1492, 1776, 1917\}$, as
+having any mathematical structure and being a domain. 
+
+In the example above, {\sf solve} is first called on $x^2-5$,
+which is an element of $\Q[x]$.  For the duration of this section, we
+will use the notation $(x^2-5)_{\Q[x]}$ when it is necessary to
+indicate the domain that contains an algebraic element.  When {\sf
+solve} returns $\sqrt{5}$ it must also create a domain in which
+$\sqrt{5}$ is an element.  This domain is $\Q[\alpha]/(\alpha^2-5)$,
+the ring of polynomials in $\alpha$ with coefficients in $\Q$ reduced
+modulo the relation $\alpha^2-5=0$.  Notice that $\alpha$ could
+correspond to either of the zeroes of $x^2-5$, so {\sf solve} must
+also set up an embedding of $\Q[\alpha]/(\alpha^2-5)$ into $\C$---that
+is, a map that sends each element of $\Q[\alpha]/(\alpha^2-5)$ to a
+complex number.  Since there is a natural embedding of $\Q$ into $\C$
+it is only necessary to indicate the image of $\alpha$ in $\C$.
+
+This final algebraic structure, along with the embedding into $\C$ is
+abbreviated as $\Q[\sqrt{5}]$.  {\sf Solve} returns
+$(\sqrt{5})_{\Q[\sqrt{5}]}$ thus conveying both the simplification
+rules that $\sqrt{5}$ must obey and the embedding in $\C$.  Notice
+that this information is associated with the domains, rather than
+attached directly to $\sqrt{5}$.  We find this to be the
+mathematically more natural approach.
+
+The second invocation of {\sf solve} is interesting.  Is {\sf solve}
+invoked on $(x^2-20)_{\Q[x]}$ or $(x^2-20)_{\Q[\sqrt{5}][x]}$?  It is
+not possible to determine which is the case by just examining the
+polynomial.  Some reference to the enclosing domain is needed.
+If {\sf solve} is called on $(x^2-20)_{\Q[x]}$ then
+$(\sqrt{20})_{\Q[\sqrt{20}]}$ is returned, just as in the previous
+discussion.  When {\sf solve} is called on
+$(x^2-20)_{\Q[\sqrt{5}][x]}$, however, the coefficient field does not
+need to be extended, and $(2\sqrt{5})_{\Q[\sqrt{5}]}$ is returned.
+This eliminates the potential future need of determining the
+relationship between $\sqrt{5}$ and $\sqrt{20}$.
+
+
+\medskip
+Weyl provides mechanisms to support multiple distinct but isomorphic
+domains in the same computation.  Why would one want to have two copies
+of $\Z$, say, present during a computation?  Algebraic extensions
+provide one motivation.  The three zeroes of $x^3 -2 $ are 
+\[
+\sqrt[3]{2},\quad \frac{1+\sqrt{-3}}{2} \sqrt[3]{2} = \zeta_3
+\sqrt[3]{2}, \quad \zeta_3^2\sqrt[3]{2}.
+\]
+Each generates an algebraic extension of $\Q$ of degree $3$.  Since
+each has a different embedding in the complex numbers, they are, in
+fact, different algebraic extensions of $\Q$.  However, algebraically
+each extension is a simple cubic extension of the form
+$\Q[\alpha](\alpha^3 -2)$: \ie,
+\[
+\begin{eqalign}
+\Q[\sqrt[3]{2}] & = \Q[\alpha]/(\alpha^3 - 2), \\
+\Q[\zeta_3 \sqrt[3]{2}] & = \Q[\beta]/(\beta^3 - 2), \\
+\Q[\zeta_3^2 \sqrt[3]{2}] & = \Q[\gamma]/(\gamma^3 - 2).
+\end{eqalign}
+\]
+That is, the elements of these fields can be represented as univariate
+polynomials modulo an irreducible univariate polynomial. Algebraically
+these fields are isomorphic.  The only difference between these three
+fields is their embedding in $\C$, \ie,
+\[
+\begin{eqalign}
+\alpha & \longrightarrow 1.259921, \\
+\beta & \longrightarrow -0.629960 + 1.091124 i, \\
+\gamma & \longrightarrow -0.629960 - 1.091124 i.
+\end{eqalign}
+\]
+Thus we need to be able to represent distinct fields that are
+algebraically isomorphic.  Only when their embedding into the complex
+numbers is specified is it possible to distinguish them. 
+
+\medskip
+In addition, having multiple isomorphic domains allows us to check
+``functorial'' code for missing or incorrect conversions while still
+using simple examples.  For instance, consider the representation of
+polynomials over the integers, $\Z[x]$.  Internally, such polynomials
+may be represented as lists of exponent-coefficient pairs:
+\[
+2x^3+5 \approx ((3, 2), (0, 5)).
+\]
+The coefficients are elements of $\Z$ as are the exponents.  For most
+operations, the exponents never come in contact with the coefficients.
+For instance, when multiplying polynomials, the coefficients are
+multiplied with each other, and the exponents are compared and added
+to each other, but there are no operations that mix
+exponents and coefficients.
+
+Many implementations use the same representation for both coefficients
+and exponents.  Instead, we suggest that there should be a domain of
+integers for the exponents in addition to the domain associated with
+the coefficients.  More generally, $k[x]$ would have two subdomains,
+$k$ for the coefficients and $\Z$ for the exponents.
+
+The value of this approach is apparent when examining polynomial
+differentiation.  In that algorithm an exponent must be multiplied
+with coefficient.  By having two isomorphic, but different, copies of
+$\Z$ we are forced to coerce an exponent into the domain of the
+coefficients even though it may not initially appear to be necessary
+for polynomials in $\Z[x]$, thus catching the need for coercion
+immediately. 
+

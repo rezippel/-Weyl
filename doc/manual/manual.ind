@@ -1,0 +1,377 @@
+\begin{theindex}
+
+  \item $k$-cell, 86
+  \item $k$-simplex, 87
+  \item {\psf *}, 29
+  \item {\psf *allow-coercions*}, 27
+  \item {\psf *factor-method*}, 38
+  \item {\psf *general*}, 64
+  \item {\psf *morphisms*}, 27
+  \item {\psf +}, 30
+  \item {\psf =}, 28
+  \item {\psf {\char 37}plus}, 30
+  \item {\psf {\char 37}times}, 29
+  \item {\psf 0?}, \bold{30}
+  \item {\psf 1?}, \bold{29}
+
+  \indexspace
+
+  \item {\psf a}, 97
+  \item {\psf abelian-group}, 25, 26, 30
+  \item {\psf abelian-monoid}, 30
+  \item {\psf abelian-semigroup}, 30
+  \item {\psf abs}, \bold{40}
+  \item {\psf abstract-function}, 49, 50
+  \item {\psf abstract-space}, 83, 84
+  \item {\psf add-new-variable}, 63, \bold{63}
+  \item {\psf add-subscripts}, \bold{46}
+  \item {\psf algebraic-degree}, \bold{73}
+  \item {\psf all-names}, \bold{96}
+  \item {\psf angles}, \bold{98}
+  \item {\psf applicable-function}, 48, 49
+  \item {\psf apply}, \bold{49}
+  \item {\psf args-of}, \bold{49}, 49
+  \item {\psf array-times}, \bold{20}
+  \item associative, 29
+
+  \indexspace
+
+  \item {\psf boundary}, \bold{90}, 94, \bold{95}
+  \item {\psf boundary-complex-of}, \bold{96}
+  \item {\psf boundary-domain}, \bold{90}
+  \item branch order, 79
+  \item {\psf branch-order}, \bold{80}
+
+  \indexspace
+
+  \item {\psf ceiling}, 39, \bold{40}
+  \item cell complex, 87--89
+  \item characteristic, 31
+  \item {\psf characteristic}, 32
+  \item {\psf choose}, \bold{16}
+  \item {\psf coefficient}, \bold{64}
+  \item coefficient domain, 32
+  \item {\psf coefficient-domain-of}, \bold{32}, 55, \bold{55}
+  \item {\psf coerce}, 27, \bold{27}, 37
+  \item {\psf cofacets}, 88, \bold{89}
+  \item {\psf combinations}, \bold{38}
+  \item commutative, 30
+  \item commutative ring, 31
+  \item {\psf complete-set?}, 33
+  \item {\psf complex-number}, 21--23
+  \item {\psf complex-numbers}, 37
+  \item {\psf compose}, 27
+  \item {\psf conjugate}, \bold{40, 41}
+  \item {\psf create-mesh}, \bold{98}
+  \item {\psf cross-product}, \bold{86}
+
+  \indexspace
+
+  \item {\psf declare-dependencies}, \bold{46}
+  \item {\psf declare-derivative}, \bold{50}
+  \item {\psf def-ge-operator}, \bold{48}
+  \item {\psf degree}, \bold{64}
+  \item {\psf delete-maximal-cell}, 88, \bold{89}
+  \item {\psf denominator}, \bold{57}
+  \item {\psf depends-on?}, \bold{47}
+  \item {\psf deriv}, \bold{48}, \bold{50}, \bold{64}, 77, \bold{78}, 
+		\bold{91}
+  \item {\psf derivation}, \bold{66}
+  \item {\psf determinant}, \bold{60}
+  \item {\psf difference}, 64
+  \item {\psf different-kernels}, \bold{47}
+  \item {\psf dimension}, \bold{53}, \bold{55}, 55
+  \item {\psf dimension-of}, \bold{87}
+  \item {\psf dimensional-space}, 83
+  \item {\psf dimensions}, \bold{84}
+  \item {\psf direct-sum}, \bold{60}
+  \item {\psf display}, \bold{47}
+  \item {\psf domain}, 28
+  \item domains, 6
+
+  \indexspace
+
+  \item {\psf epolynomial}, 68
+  \item Euclidean space, 83
+  \item {\psf euclidean-domain?}, 33
+  \item {\psf exp}, \bold{40}
+  \item {\psf expand}, \bold{48}
+  \item {\psf expt}, 29, 30, \bold{30}, 64
+
+  \indexspace
+
+  \item {\psf face?}, \bold{87}
+  \item {\psf facets}, \bold{88}, 88, \bold{89}
+  \item {\psf factor}, \bold{38}
+  \item factor group, 57
+  \item factor ring, 57
+  \item {\psf factor-denom-of}, \bold{57}
+  \item {\psf factor-numer-of}, \bold{57}
+  \item {\psf factorial}, \bold{38}
+  \item {\psf fermat-integer-factor}, 38
+  \item {\psf field}, 32
+  \item {\psf floating-number}, 23
+  \item {\psf floor}, 39, \bold{39}
+  \item free module, 84
+  \item {\psf free-module}, 32
+  \item {\psf funcall}, \bold{49}
+  \item {\psf funct-of}, 49, \bold{49}
+
+  \indexspace
+
+  \item {\psf gcd}, 33, \bold{64}
+  \item {\psf gcd-domain?}, 33
+  \item {\psf ge-application}, 49
+  \item {\psf ge-equal}, \bold{48}
+  \item {\psf ge-function}, 48--50
+  \item {\psf ge-great}, \bold{48}, 48
+  \item {\psf ge-variable?}, \bold{46}
+  \item {\psf get-cell}, 88, \bold{88}
+  \item {\psf get-chain-module}, \bold{90}
+  \item {\psf get-complex-numbers}, 35
+  \item {\psf get-differential-ring}, \bold{66}
+  \item {\psf get-direct-sum}, \bold{53}, 53
+  \item {\psf get-euclidean-space}, \bold{84}, 84
+  \item {\psf get-finite-field}, 35, \bold{42}, 43
+  \item {\psf get-free-module}, \bold{55}, 55
+  \item {\psf get-matrix-space}, \bold{59}
+  \item {\psf get-morphisms}, \bold{27}, 27
+  \item {\psf get-polynomial-ring}, 61, \bold{61}, 62
+  \item {\psf get-quaternion-domain}, \bold{41}
+  \item {\psf get-quotient-field}, \bold{57}
+  \item {\psf get-rational-integers}, 35, \bold{37}
+  \item {\psf get-rational-numbers}, 35, \bold{39}
+  \item {\psf get-real-numbers}, 35, \bold{39}
+  \item {\psf get-tpower-series}, 76
+  \item {\psf get-tpower-series-domain}, \bold{76}
+  \item {\psf get-variable-property}, \bold{46}, \bold{63}, 63
+  \item {\psf get-vector-space}, 55, \bold{59}
+  \item {\psf GFm}, 43
+  \item {\psf grobner-basis}, 72
+  \item {\psf group}, 29, 30
+
+  \indexspace
+
+  \item {\psf has-memoization}, 46
+  \item {\psf hermite}, \bold{60}
+  \item Hermite normal, 60
+  \item {\psf home-of}, \bold{96}
+
+  \indexspace
+
+  \item {\psf imagpart}, \bold{40}
+  \item {\psf inner-product}, \bold{56}
+  \item {\psf insert}, \bold{89}
+  \item {\psf insert-boundary}, \bold{98}, 99
+  \item {\psf integer-nth-root}, \bold{38}
+  \item {\psf integral-domain}, 25
+  \item {\psf integral-domain?}, 33
+  \item {\psf interpolate}, \bold{65}
+  \item {\psf intersection}, \bold{89}
+  \item {\psf isqrt}, \bold{38}
+
+  \indexspace
+
+  \item {\psf jacobian}, \bold{60}
+
+  \indexspace
+
+  \item {\psf list-expt}, \bold{20}
+  \item {\psf list-inner-product}, \bold{20}
+  \item {\psf list-of-elements}, \bold{19}
+  \item {\psf list-of-variables}, \bold{65}
+  \item {\psf locate}, \bold{97}
+  \item {\psf log}, \bold{40}
+
+  \indexspace
+
+  \item {\psf make-affine-projection}, 86, \bold{86}
+  \item {\psf make-affine-space}, 85, \bold{85}
+  \item {\psf make-applicable-function}, 50, \bold{50}
+  \item {\psf make-chain}, \bold{91}
+  \item {\psf make-curved-segment}, 99, \bold{99}, 104
+  \item {\psf make-element}, 37, 41, \bold{41}, 42, \bold{42}, 
+		\bold{54, 55}, \bold{59}, \bold{85}
+  \item {\psf make-ideal}, \bold{72}, 72
+  \item {\psf make-instance}, 22
+  \item {\psf make-mesh}, 93, \bold{94}, 95, 96, 98, 104
+  \item {\psf make-mesh-from-file}, 93, 94, \bold{96}, 103
+  \item {\psf make-morphism}, 27, \bold{27}
+  \item {\psf make-point}, 55, 84, \bold{85}, 86, \bold{86}
+  \item {\psf make-projective-space}, \bold{86}
+  \item {\psf make-quotient}, 56
+  \item {\psf make-quotient-element}, 57
+  \item {\psf make-quotient-field}, \bold{56}
+  \item {\psf make-ring-of-fractions}, \bold{56}
+  \item {\psf make-simplex}, \bold{87}, 99
+  \item {\psf make-simplicial-complex}, \bold{88}
+  \item {\psf map}, \bold{19}
+  \item {\psf map-over-cells}, \bold{88}, 97
+  \item {\psf map-over-maximal-cells}, \bold{88}
+  \item {\psf map-with-domain}, \bold{20}
+  \item {\psf matrix-dimensions}, \bold{59}
+  \item maximal cell, 89
+  \item {\psf maximal-cell?}, 88, \bold{89}
+  \item {\psf member}, \bold{88}, 88
+  \item {\psf memoize}, 18, \bold{19}, 46
+  \item {\psf minus}, 64
+  \item module, 32
+  \item Monoid, 29
+  \item {\psf monoid}, 26
+  \item {\psf mpolynomial}, 67
+  \item {\psf multiplicative-order}, \bold{43}
+  \item {\psf multivariate-polynomial-ring}, 65
+
+  \indexspace
+
+  \item {\psf name}, \bold{97}
+  \item {\psf name-region}, 99, \bold{99}
+  \item {\psf nargs-of}, \bold{49}, 49, 50
+  \item {\psf newprime}, \bold{39}
+  \item {\psf non-strict-domain}, 45
+  \item {\sf cl:number}, a Lisp type, 36
+  \item {\psf number-of-elements}, \bold{42}
+  \item {\sf number?}, 36
+  \item {\psf numerator}, \bold{57}
+  \item {\sf numeric}, a Lisp type, 36
+
+  \indexspace
+
+  \item {\psf one}, 29, \bold{29}, 29
+  \item {\psf one-matrix}, 59
+  \item {\psf opposite}, \bold{87}
+  \item order, 80
+  \item {\psf order}, \bold{80}
+  \item {\psf ordered-domain?}, 33
+
+  \indexspace
+
+  \item {\psf partial-deriv}, \bold{64}
+  \item partition, 16
+  \item {\psf partition}, \bold{16}
+  \item {\psf permute}, \bold{15}
+  \item {\psf phase}, \bold{40}
+  \item {\psf PID-ideal}, 72
+  \item {\psf plus}, 23, 25, 30, 64
+  \item {\psf pochhammer}, \bold{38}
+  \item {\psf point}, \bold{94}, 94
+  \item {\psf polynomial}, 26
+  \item {\psf polynomial-ring}, 26, 63
+  \item {\psf power-of?}, \bold{38}
+  \item {\psf prime?}, \bold{38}
+  \item {\psf princ}, 47
+  \item {\psf print-object}, \bold{47}
+
+  \indexspace
+
+  \item {\psf quotient}, 64
+  \item quotient ring, 56
+  \item {\psf quotient-reduce}, \bold{57}, 57
+
+  \indexspace
+
+  \item {\psf rational-integer}, 35, 37, 39
+  \item {\psf rational-number}, 35, 37, 39
+  \item {\psf rational-numbers}, 37
+  \item {\psf read-mesh}, 98, \bold{98}, 104
+  \item {\psf real-numbers}, 37
+  \item {\psf realpart}, \bold{40}
+  \item {\psf recip}, \bold{29}, 64
+  \item {\psf reduce-basis}, \bold{73}
+  \item {\psf ref}, \bold{19}, 54, \bold{54}, \bold{56}, \bold{60}
+  \item {\psf refine-mesh}, 98, \bold{98}, 99
+  \item {\psf region}, \bold{94}, 94
+  \item {\psf remainder}, \bold{64}
+  \item {\psf reset-domains}, 37, 39, 46
+  \item {\psf revert}, \bold{78}
+  \item {\psf Ring}, 26
+  \item {\psf ring}, 25, 31, 32
+  \item {\psf rng}, 31
+  \item {\psf round}, 39, \bold{40}
+
+  \indexspace
+
+  \item {\psf sampled-function}, 48, 49
+  \item {\psf scalar?}, \bold{64}
+  \item semigroup, 29
+  \item {\psf semigroup}, 29, 30
+  \item {\psf set}, 28
+  \item {\psf setf}, 46, 63
+  \item {\psf simple-integer-factor}, 38
+  \item {\psf simplex-size}, \bold{98}
+  \item simplicial complex, 88
+  \item {\psf simplify}, \bold{48}
+  \item {\psf smith}, \bold{60}
+  \item Smith normal form, 60
+  \item {\psf solve-diff-eqn}, \bold{78}
+  \item {\psf sparse-determinant}, \bold{60}
+  \item {\psf spectrum}, \bold{73}
+  \item {\psf sqrt}, \bold{40}
+  \item {\psf subdeterminant}, \bold{60}
+  \item {\psf substitute}, \bold{65}, \bold{77}
+  \item {\psf super-domains-of}, \bold{26}
+
+  \indexspace
+
+  \item {\psf taylor}, \bold{76}, 77
+  \item {\psf times}, 30, 64
+  \item {\psf totient}, \bold{38}
+  \item {\psf transpose}, \bold{60}
+  \item {\psf truncate}, 39, \bold{40}
+
+  \indexspace
+
+  \item {\psf union}, \bold{89}
+  \item {\psf unique-factorization-domain?}, 33
+  \item {\psf use-weyl-package}, \bold{10}
+  \item {\psf user::compile-weyl}, \bold{9}
+  \item {\psf user::dump-weyl}, \bold{10}
+  \item {\psf user::load-weyl}, \bold{9}
+
+  \indexspace
+
+  \item valence, 80
+  \item {\psf valence}, \bold{80}
+  \item {\psf variable-derivation}, \bold{66}
+  \item {\psf variable-index}, 62, \bold{62}
+  \item {\psf variable-symbol}, \bold{62}, 62
+  \item vector space, 84
+  \item {\psf vector-space}, 32
+  \item {\psf vertex-set}, \bold{89}
+  \item {\psf vertices-of}, \bold{87}, \bold{97}
+
+  \indexspace
+
+  \item {\psf weyli::binary=}, 28, \bold{28}
+  \item {\psf weyli::difference}, 30
+  \item {\psf weyli::epolynomial}, 67
+  \item {\psf weyli::get-comparison-fun}, 68, \bold{68}
+  \item {\psf weyli::has-memoization}, 18
+  \item {\psf weyli::make-comparison-fun}, \bold{68}
+  \item {\psf weyli::make-element}, 86
+  \item {\psf weyli::make-epolynomial}, \bold{68}
+  \item {\psf weyli::minus}, 30
+  \item {\psf weyli::mpolynomial}, 67
+  \item {\psf weyli::plus}, 30, \bold{30}
+  \item {\psf weyli::poly-gcd-algorithm}, 64
+  \item {\psf weyli::qf-ring}, \bold{57}
+  \item {\psf weyli::quotient}, 30
+  \item {\psf weyli::repeated-squaring}, \bold{37}, 37
+  \item {\psf weyli::times}, \bold{29}
+  \item {\psf weyli::tpower-series}, 79
+  \item {\psf weyli::truncate-order}, \bold{81}
+  \item {\psf weyli::tuple}, 19
+  \item {\psf weyli::upolynomial}, 67
+  \item {\psf weyli::with-tpower-series}, \bold{81}
+  \item {\psf weyli::{\char 37}memoize}, 18, \bold{18}
+  \item {\psf with-matrix-dimensions}, \bold{60}
+  \item {\psf with-numerator-and-denominator}, \bold{57}
+  \item {\psf write-mesh}, 93, \bold{96}, 98, 104
+
+  \indexspace
+
+  \item {\psf zero}, \bold{30}
+  \item {\psf zero-matrix}, 59
+  \item {\psf zero?}, 30
+
+\end{theindex}

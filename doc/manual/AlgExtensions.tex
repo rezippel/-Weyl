@@ -1,0 +1,161 @@
+\chapter{Algebraic Structures}
+  
+This chapter begins with a discussion
+of Weyl's representation of ideals and spectrums of
+rings. Taking the quotient of these structures and their
+rings gives leads to domains that can be used to represent
+algebraic numbers and algebraic functions.
+
+\section{Ideals}
+  
+Recall that an ideal of a commutative ring $R$ is an additive
+subgroup of $R$ such that the product of any element of the ideal by
+an element of $R$ is an element of the ideal. Thus the ideal is an $R$
+module.
+  
+Ideals are a slightly unusual objects in Weyl since they are treated
+like domain elements (arithmetic operations can be applied to ideals),
+but are in fact domains.  One might think that they should be both
+domains and domains elements, and perhaps they will be in the future,
+but doing so now would be problematic. If they were domain elements,
+they would have to be elements of some domain and there is no natural
+domain that would suffice.  (The spectrum of the ring only includes
+the prime ideals, and additional possesses a topology.)
+  
+\begin{figure}
+\begin{center}
+\BoxedEPSF{IdealClass.eps scaled 500}
+\end{center}
+\caption{Ideal Class Structure\label{Ideal:Classes:Fig}}
+\end{figure}
+
+The set of classes used to represent ideals is given in
+\figref{Ideal:Classes:Fig}.  All ideals are subclasses of the class
+ideal. Every ideal is represented by a (not necessarily minimal) list
+of elements that generate the ideal. Currently, Weyl is only capable
+of representing ideals that are finitely generated. Ideals can be
+created using the following function:
+  
+\begin{functiondef}{make-ideal}{domain \rest elements}
+  
+Creates the ideal of the ring domain, which is generated
+by the polynomials {\em polys}. The polynomials must
+all come from the same ring. Initially, we have only
+implemented the Gr\"{o} bner basis algorithm for polynomials
+over fields, the domain of the polynomials must be a
+polynomial ring over a field.
+
+\end{functiondef}
+  
+There are two subclasses of the class ideal: \keylisp{PID-ideal} and
+\keylisp{grobner-basis}. If the ring of the ideal is a principal ideal
+domain, then \keylisp{make-ideal} will create an instance of
+\keylisp{PID-ideal}. The ring  of the ideal is a polynomial ring then
+a \keylisp{grobner-basis} ideal will be created.\footnote{The name of
+the class {\sf grobner-basis} is very poor and should be changed so
+that it doesn't refer to a particular algorithm.}
+
+Two basic arithmetic operations are provided for manipulating ideals:
+addition and multiplication.  Given the ideal ideals $A = (a_1,
+\ldots, a_m)$ and $B = (b_1, \ldots, b_n)$, their sum is defined to be
+\[
+A+B = (a_1, \ldots, a_m, b_1, \ldots, b_n)
+\]
+and their product is defined to be 
+\[
+A \cdot B  =
+ (a_1 b_1, a_1, b_2, \ldots, a_1 b_n, a_2 b_1,\ldots, a_m b_{n-1}, a_m b_n).
+\]
+  
+The standard {\sf +} and {\sf *} operators in Weyl are thus overloaded
+to work with ideals also. This is illustrated in the following simple
+examples:
+  
+\begin{code}
+> (setq a (make-ideal (get-rational-integers) 12))
+#Id(12)
+  
+> (setq b (make-ideal (get-rational-integers) 15))
+#Id(15)
+\end{code}
+  
+An ideal is printed as a parenthesized list of its generators. Since
+we know that $\Z$ is a principal ideal domain, the list of generators
+will only have one element.\footnote{There are a lot of very delicate
+issues here.  The test for whether or not the ring is a PID is
+generally quite difficult.  In the current implementation, Weyl
+explicitly checks for $\Z$.  Even if one knows the ring is a PID, it
+can be difficult to determine the ideal's generator.  The current
+implementation assumes that in addition to being a PID there is an
+explicit GCD algorithm available.}
+ 
+\begin{code}
+> (+ a b)
+#Id(3)
+
+> (* a b)
+#Id(180)
+\end{code}
+  
+For a more sophisticated example consider:
+\begin{code}  
+> (setq r (get-polynomial-ring (get-rational-numbers) '(x y)))
+Q[x, y]
+  
+> (setq a (make-ideal r (+ (* 'x 'x 'x) (* 'y 'y)) (* 'x 'y)))
+#Id( x y,  x^3 +  y^2)
+
+> (setq b (+ a (* a a)))
+#Id(x^2 y^2, x^4 y + x y^3, x^4 y +  x y^3, x^6 + 2 x^3 y^2 + y^4, x^3 + y^2, x y)
+\end{code}
+
+Although the last two results do exhibit bases for a ideals, they are
+not the minimal bases. A reduced basis can be obtained by applying the
+following routine.
+  
+\begin{functiondef}{reduce-basis}{ideal}
+Reduces the basis provided for the ideal using the
+techniques available.  For polynomials ideals this means
+computing the Gr\"{o}bner basis assuming a monomial ordering
+has been provided. 
+\end{functiondef}  
+
+When this routine is applied to the previous example we have:
+\begin{code}
+> (reduce-basis a)
+#Id( x y,  x^3 +  y^2,  y^3)
+  
+> (reduce-basis b)}
+#Id( x y,  x^3 +  y^2,  y^3)
+\end{code}
+  
+So we see that {\sf a} is equal to {\sf (+ a (* a a))}. Further notice
+that the reduce basis has more elements that the original basis.
+  
+  
+\section{The Spectrum of a Ring}
+  
+This section needs to discuss the topological structure of the
+spectrum as well.
+  
+  
+\begin{functiondef}{spectrum}{Ring}
+  This function returns a new domain which is the spectrum
+of {\em ring}. The elements of this domain are the ideals
+of {\em ring}. (Need to figure out how the topology
+of Spec {\em R} fits into all this.) 
+\end{functiondef}
+  
+\section{Algebraic Extensions}
+
+\begin{functiondef}{algebraic-degree}{domain1 domain2}
+This function checks to ensure that {\em domain2} is a subring of {\em
+domain1} and, if so, returns the algebraic degree of {\em domain2}
+over {\em domain1}.
+\end{functiondef}
+
+\section{Algebraic Closures}
+
+Need to special case the algebraic closure of the real numbers.  This
+is the only algebraic closure that is of finite degree.
+

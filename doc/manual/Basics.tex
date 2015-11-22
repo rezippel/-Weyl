@@ -1,0 +1,848 @@
+% -*- Mode: LaTeX -*-
+% $Id: Basics.tex,v 1.5 1995/03/31 15:31:14 rz Exp $
+\chapter{Basics}
+\label{Basics:Chap}
+
+This chapter describes the basic tools used by Weyl to model the
+algebraic structures of mathematics.  The fundamental difference
+between Weyl and most other systems is that in addition to providing a
+representation for domain elements like polynomials, Weyl also
+provides representations for the algebraic domains of which the
+polynomials are elements.  In \sectref{Domains:Sec} we discuss {\em
+domains} and {\em domain elements}. \sectref{Morphisms:Sec} discusses
+morphisms, which are used to define the relationships between the
+elements of two domains.  \sectref{Coercions:Sec} illustrates how to
+make use of these relationships.  \sectref{Domain:Hierarchy:Sec}
+presents the hierarchy of domains being used in Weyl. Weyl uses the
+Common Lisp Object System quite heavily. We begin this chapter with a
+brief introduction to CLOS, focusing on those points that are
+relevant to Weyl.
+
+\section{Common Lisp Object System}
+\label{CLOS:Sec}
+
+Weyl is based on the Common Lisp Object System (CLOS) \cite{CLOS:Manual}
+programming model.  Since this model of object-oriented programming
+differs significantly from the more common, message-based paradigm
+used in Smalltalk and \Cp+, we give a short introduction here.
+
+CLOS is an object-oriented extension to Common Lisp that has been
+adopted as part of ANSI standard Common Lisp during the
+standardization process.  A portable implementation of CLOS is
+available\footnote{It can be transferred from {\sf parcftp.xerox.com}
+in the {\sf pub/pcl} directory.} and most commercial Common Lisp
+vendors provide efficient implementations.  This introduction hits
+only the highlights needed for Weyl.  Many other features are present
+and are described in the standard.
+
+CLOS extends Lisp with two pairs of new concepts: {\em instances} and
+{\em classes\/}, and {\em methods} and {\em generic functions\/}.
+Instances and classes are an extension of the ``structure'' concept
+that is already present in Common Lisp (and most other modern
+languages).  Methods and generic functions are completely new to
+Common Lisp and provide most of the new functionality.
+
+Instances are structures that contain zero or more {\em slots} that
+can each hold arbitrary Lisp values. Each instance is derived from a
+{\em class} of similar objects. For example, we might want to
+construct the class to represent complex numbers of the form $a + bi$,
+where $i$ is $\sqrt{-1}$. Each instance of this class contains two
+slots, which we indicate by the names {\sf a} and {\sf b}, in which
+the real and imaginary parts of the complex number are stored.  The
+class of such instances might be called \keylisp{complex-number} and
+defined as:
+\begin{code}
+(defclass complex-number ()
+  ((a :initarg :real :accessor real-part)
+   (b :initarg :imag :accessor imag-part)))
+\end{code}
+
+A particular instance of the class \keylisp{complex-number} can be created by
+calling the function \keylisp{make-instance}.  The keywords provided with
+the {\sf :initarg} options in the class definition are used to
+indicate the initializing values for each slot.  A particular {\sf
+point} can be created as:
+\begin{code}
+(setq z (make-instance 'complex-number :real 1.0 :imag 2.0))
+\end{code}
+
+\noindent
+The keywords provided with the {\sf :initarg} options in the class
+definition are used to indicate the initializing values for each
+slot. Their relationship to the slots is given in the {\sf defclass} form
+that defines \keylisp{complex-number}.
+
+
+The {\sf :accessor} options used in the class definition define forms
+that can be used to read the values in each slot.  The forms can also
+be used as arguments to {\sf setf}.\footnote{Recall that {\sf setf} is
+the extensible assignment operator used by Common Lisp.  Its first
+argument is an accessor and its second argument is the new value that
+is stored in the location referred to by the accessor.  It can be used
+to update the value of variables and modify lists, arrays and
+structures.  Since arbitrary functions can be used to update these
+structures, nontrivial computations can be caused by the use of {\sf
+setf}.}  For example, we can modify {\sf z} to be its complex
+conjugate by:
+\begin{code}
+(setf (imag-part z) (- (imag-part z)))
+\end{code}
+
+One can define a class so that each of its instances contain the slots
+associated with another class.  For example, if we wished to associate
+another property with a complex number, \eg, the units, we would
+define a class like
+\begin{code}
+(defclass dimensioned-complex-number (complex-number)
+  ((units :initarg :units :accessor units)))
+\end{code}
+
+\noindent
+An instance of a {\sf dimensioned-complex-number} would contain three
+slots, {\sf a} and {\sf b} slots that are {\em inherited} from
+\keylisp{complex-number} and a {\sf units} slot that is unique to
+instances of {\sf dimensioned-complex-number}.  We say that the class
+{\sf dimensioned-complex-number} {\em inherits} from
+\keylisp{complex-number}, and that {\sf complex-number} is a {\em
+superclass} of {\sf dimensioned-complex-number}.
+
+Classes can inherit from more than one superclass, in which case their
+instances' set of slots contains the union of the slots of the
+superclasses.  This introduces an potential problem when the same slot
+name is used in more than one superclass.  How this dealt is with is
+discussed in detail in the CLOS specification \cite{CLOS:Manual}.  For
+our purposes, we will assume that this situation never occurs.  If it
+occurs, it is to be treated as an error.
+
+The dimensioning example given above is a good example of where
+multiple inheritance would be naturally used.  There are many
+different types of numerical objects for which we would like to
+associate units.  This could be done using the
+following definition: 
+  
+\begin{code}
+(defclass dimensioned-floating-number ()
+  ((float :initarg :value :accessor float-value)
+   (units :initarg :units :accessor units)))
+\end{code}
+
+\noindent
+However, the definition of the {\sf units} slots is now repeated in
+two different class definitions. Thus modifications to one slot may
+require modifications at several places in the source code.
+
+To simplify our definitions and to ensure that consistent names are
+used for the initialization keyword and for the accessing routines, we
+create a second superclass for units, \viz,
+\begin{code}
+(defclass dimensioned-number ()
+  ((units :initarg :units :accessor units)))
+\end{code}
+
+\noindent
+Now the definition of {\sf dimensioned-complex-number} becomes just
+\begin{code}
+(defclass dimensioned-complex-number (complex-number dimensioned-number)
+  ())
+\end{code}
+
+Similarly, the definition of {\sf dimensioned-float} should be
+\begin{code}
+(defclass floating-number (dimensioned-number)
+  ((float :initarg :value :accessor float-value)))
+
+(defclass dimensioned-floating-number 
+    (floating-number dimensioned-number)
+  ())
+\end{code}
+  
+Notice that we split off a {\sf floating-number} class so that {\sf
+dimensioned-floating-number} is the combination of two classes that
+provide orthogonal functionality, in accordance with good
+software-engineering practice. 
+  
+This is all that needs to be known about classes and instances in
+CLOS.
+
+\medskip
+The basic building block of Lisp is function invocation.  In CLOS,
+this mechanism is extended via {\em polymorphism}.  This is allows the
+same function name to be used for arguments of different types and
+with different pieces of code invoked.  For example, assume we want to
+use the function \keylisp{plus} to add two numbers.  In particular, we
+want {\sf plus} to work for two complex numbers.  This can be
+accomplished by defining the following {\em method\/}:
+\begin{code}
+(defmethod plus ((z1 complex-number) (z2 complex-number))
+  (make-instance 'complex-number 
+                 :real (+ (real-part z1) (real-part z2))
+                 :imag (+ (imag-part z1) (imag-part z2))))
+\end{code}
+
+\noindent
+The {\sf +} function used above is the addition function of Common
+Lisp.   Similarly, we should create a {\sf plus} method for combining
+two {\sf floating-number}s.
+\begin{code}
+(defmethod plus ((z1 floating-number) (z2 floating-number))
+  (make-instance 'floating-number  
+                 :value (+ (float-value z1) (float-value z2))))
+\end{code}
+  
+Behind the scenes, CLOS creates a {\em generic function}, which it
+places in the function cell of the symbol {\sf plus}.  When invoked,
+the generic function chooses the most specific method for the classes
+of its arguments and invokes it. The code for choosing the most
+appropriate {\sf plus} method is generated at run time, after all the
+{\sf plus} methods are known. In addition, the process of invoking the
+selected method is usually done using a mechanism that is more
+efficient than a standard function call. This allows the code to be
+quite efficient.
+  
+As with multiple inheritance of classes, it is possible for
+ambiguities to arise when deciding which method is most appropriate
+for a given set of arguments. The CLOS specification provides a
+precise mechanism for eliminating this ambiguity.
+  
+Notice that methods are not associated with particular classes like
+complex-number or floating-number as is done in languages like
+Smalltalk, but with generic functions.  An example of where this is of
+value is defining a method for adding a \keylisp{complex-number} and
+\keylisp{floating-number}:
+\begin{code}
+(defmethod plus ((z1 complex-number) (z2 floating-number))
+  (make-instance 'complex-number 
+                 :real (+ (real-part z1) (float-value z2)) 
+                 :imag (imag-part z1)))
+\end{code}
+  
+This ``generic function oriented'' object-oriented programming style
+is the major difference between CLOS and most other objected-oriented
+programming environments.  It allows CLOS to treat the arguments to
+generic functions symmetrically, without bias towards one or the
+other.
+
+If {\sf plus} is applied to two {\sf dimensioned-complex-numbers}, the
+value returned will be a {\sf complex-number}, not a {\sf
+dimensioned-complex-number}.  Furthermore, nothing will check to see
+if the units of the two complex numbers match. Thus we really could
+add apples and oranges. This problem can be addressed by adding the
+following method:
+\begin{code}  
+(defmethod plus ((z1 dimensioned-complex-number) (z2 dimensioned-complex-number))
+  (if (eql (units z1) (units z2)) 
+      (make-instance 'dimensioned-complex-number 
+                     :real (+ (real-part z1) (real-part z2)) 
+                     :imag (+ (imag-part z1) (imag-part z2)) 
+                     :units (units z1))
+      (error "Combining dimensioned numbers with different units.")))
+\end{code}
+  
+\noindent
+Notice that when the dimensions of two {\sf complex-numbers} differ
+this method will signal an error. A more sophisticated method might
+perform a unit conversion.
+  
+In order to distinguish the different {\sf plus} methods
+(there are now three), we will qualify the names of the
+methods with the classes of their arguments. So this
+last {\sf plus} method is the {\sf (plus dimensioned-complex-number
+dimensioned-complex-number)} method.
+  
+The way in which we coded this last {\sf plus} method has a problem.
+Each time a new subclass of {\sf dimensioned-objects} is defined, we
+will have to define a new, specialized version of the {\sf plus}
+method. Furthermore, the central code of the complex-number {\sf plus}
+method is repeated.  This problem can be avoided by using a special
+type of method, called an {\sf :around} method, which ``wraps itself
+around all other methods.''  When {\sf :around} methods are provided,
+each of the applicable ``around'' methods are collected into a list
+with the regular or primary methods placed at the end of the list. The
+generic function then invokes the first method in the list. The value
+returned by this method is the value of the generic function. However,
+each {\sf :around} method can pass control to the next method on the
+list by invoking {\sf call-next-method}. The arguments to {\sf
+call-next-method} are the arguments to the next method on the list, 
+so {\sf :around} methods can be used to modify, or canonicalize, the
+arguments to other methods.
+  
+Using this mechanism, we can replace the {\sf (plus dimensioned-complex-number
+dimensioned-complex-number)} method by the following
+{\sf :around} method for {\sf dimensioned-object}.
+\begin{code}
+(defmethod plus :around ((z1 dimensioned-number) (z2 dimensioned-number)) 
+  (if (eql (units z1) (units z2))
+      (let ((sum (call-next-method z1 z2)))
+        (setf (units sum) (units z1))
+        sum)
+      (error "Combining dimensioned numbers with different units.")))
+\end{code}
+  
+This method checks to see if its two arguments have the same
+dimensions. If so, it has the remaining applicable methods perform the
+addition. It then updates the {\sf units} slot of the value to be
+returned.
+  
+Unfortunately, this is not enough.  The basic {\sf plus} methods,
+those for adding two {\sf complex-number}s or two {\sf
+floating-number}s, will not return objects of the right class.  In
+particular, they will not create instances of classes that include the
+{\sf dimensioned-object} class.  However, this is easily fixed with a
+slight change to the basic methods.  For instance, the {\sf
+complex-number} {\sf plus} method should be modified to:
+\begin{code}
+(defmethod plus ((z1 complex-number) (z2 complex-number))
+  (let ((z1-class (class-of z1))
+        (new-class (if (eql z1-class (class-of z2)) z1-class
+                       'complex-number)))}
+    (make-instance new-class
+                   :real (+ (real-part z1) (float-value z2)) 
+                   :imag (imag-part z1)))
+\end{code}
+  
+With these techniques, any class that admits addition can be extended
+to a dimensioned class that also admits addition, and where addition
+is properly coded. This use of ``around'' methods allows us to divide
+the code into more orthogonal components than is possible with more
+conventional functional programming approaches.
+  
+The process of building up methods from pieces, as was done in this
+example, is called {\em method combination} and is a very powerful
+tool. However, it can lead to extremely opaque and hard to follow code
+if not used judiciously. There are many other features in CLOS,
+including more sophisticated forms of method combination and the
+metaobject protocol, that we have not touched on. However, we hope
+that this quick introduction will make Weyl's internal organization
+easier to digest.
+  
+
+\section{Domains}
+\label{Domains:Sec}
+
+The objects that are usually manipulated in algebraic computation
+systems---integers, polynomials, algebraic functions, etc.---are
+called ``domain elements'' in Weyl.  They are elements of algebraic
+objects called {\em domains\/}.  Examples of domains are the ring of
+(rational) integers $\Z$, the ring of polynomials in $x$, $y$ and $z$
+with integer coefficients, $\Z[x, y, z]$, and the field of Gaussian
+numbers, $\Q[i]$.
+
+Both domains and domain elements are implemented as instances of CLOS
+classes.  These classes are part of a conventional,
+multiple-inheritance class hierarchy.  The class hierarchy used when
+constructing domains includes classes corresponding to groups, rings,
+fields and many other familiar types of algebraic domains.
+
+This approach allows us to provide information about domains that is
+often difficult to indicate if we could only specify information about
+the type of the domain's elements.  For instance, in addition to the
+class \keylisp{ring} we also provide classes like
+\keylisp{integral-domain}.\footnote{An integral domain $R$ is ring
+that does not have any zero divisors.  That is, for all $a, b \in R$,
+if $ab = 0$ then either $a=0$ or $b=0$.} Whether a domain is an
+integral domain or just a ring does not change how the domain's
+elements are represented or the operations that can be performed on
+them.  What it may affect is the algorithms used to implement the
+operations.  As an example in a less mathematical context, consider
+the difference between binary trees and balanced binary trees. 
+
+In addition we provide information about the permissible operations
+involving elements of the domain.  For instance, an
+\keylisp{abelian-group} must have a \keylisp{plus} operation that can be
+applied to pairs of its elements.  The result will be an element of
+the abelian group.  This parallels the mathematical definition of a
+group where a group is a pair $(G, \times)$ consisting of a set of
+elements ($G$) and a binary operation ($\times$) that maps pairs of
+elements of $G$ into $G$.  Contrast this to the typical definition of
+a type as a set of objects that obeys a predicate.
+
+We attach information about the permissible operations on the elements
+of a domain to the domain itself.  This ensures that when an instance
+of a domain is instantiated, the appropriate operations have been
+provided.  This is especially valuable in an incremental development
+environment like those common for Lisp.
+
+Domain elements are also implemented as instances of CLOS classes, but
+in addition they are associated with a particular domain.  This
+association is implemented by a reference in the domain element to the
+containing domain. The CLOS class structure provides the ``structural
+type'' referred to earlier.
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{Domains.eps scaled 812}
+\end{center}
+\caption{Domain Example\label{Domain:Ex:Fig}}
+\end{figure}
+
+\figref{Domain:Ex:Fig} illustrates the relationship between domains,
+domain elements and CLOS classes for a simple example.  The polynomial
+$x+1_{\Z[x]}$ is an instance of the CLOS class \keylisp{polynomial}.  The
+domain $\Z[x]$ is an instance of the class \keylisp{polynomial-ring},
+which inherits from \keylisp{Ring}, \keylisp{monoid} and
+\keylisp{abelian-group}.  The polynomial $x+1_{\Z[x]}$ is an element
+of the domain $\Z[x]$.  Notice that there is a complete type hierarchy
+sitting above the class \keylisp{polynomial-ring}.
+
+There are always two functions for obtaining a domain.  The one
+that begins ``{\sf weyli::make-}'' always creates a new domain.  The one
+beginning with ``{\sf get-}'' tries to find an isomorphic domain that
+already exists.  Thus {\sf (get-rational-integers)} always returns the
+same rational integer domain, while {\sf (make-rational-integers)}
+always creates a new instance of the rational integers.
+
+\subsection{Subdomains and Superdomains}
+
+In some circumstances it is useful to be able to create a domain that
+is a subdomain of a larger domain.  For instance, the positive
+integers are viewed as a subdomain of the rational integers. The elements
+of an ideal of ring form an additive group that is a subdomain of the
+original ring.
+
+\begin{genericdef}{super-domains-of}{domain}
+Returns the superdomains that contain {\em domain}.
+\end{genericdef}
+
+At the moment, nothing uses this mechanism. The superdomain concept
+is intended for dealing with deductive questions like: Are there any
+zero divisors in the set of positive integers? Although the set of
+positive integers is not an integral domain, it is a subsemigroup of an
+integral domain and thus none of the positive integers is a zero
+divisor.  Similarly, it is intended that an ideal of a ring $R$ will be
+implemented as an $R$-module that is also a subdomain of $R$.
+
+\section{Morphisms}
+\label{Morphisms:Sec}
+
+Morphisms are maps between domains.  They are first-class objects in
+Weyl and can manipulated like domains and domain elements.  In
+particular, two morphisms can be composed using the operation
+\keylisp{compose}.  Morphisms are created using the function
+\keylisp{make-morphism}, which takes three arguments. 
+
+\begin{genericdef}{make-morphism}{domain mapping range \key (replace?
+{\sf T})}
+This function creates a morphism from {\em domain} to {\em range}.
+{\em Mapping} is a function of one argument that takes an element of
+{\em domain} and returns an element of {\em range\/}.  If {\em
+replace?} is true, then any existing morphisms between {\em domain} and
+{\em range} are deleted before the new morphism is created.
+\end{genericdef}
+
+All morphisms created are remembered in the \keylisp{*morphisms*}
+data structure.  (Initially, this is just a list.)  To find any
+existing homomorphisms we can use the function \keylisp{get-morphisms}. 
+
+\begin{functiondef}{get-morphisms}{\key{} domain range}
+When given no arguments this function returns a list of all the
+morphisms Weyl currently knows about in this context.  When the {\em
+domain} is provided, it returns all morphisms from {\em domain} to
+anywhere.  Similarly, when {\em range} is provided, only those
+morphisms that map into {\em range} are returned.  When both {\em
+range} and {\em domain} are given, then only those morphisms from {\em
+domain} to {\em range} are returned.
+\end{functiondef}
+
+Classes have been provided to indicate that more is known about the
+map than that is a simple morphism.  In particular, a morphism can be
+a homomorphism, an injection, a surjection, an isomorphism and an
+automorphism.  At the moment nothing takes advantage of this information.
+
+\section{Coercions}
+\label{Coercions:Sec}
+
+Explicit coercions are performed by the function \keylisp{coerce}:
+
+\begin{genericdef}{coerce}{element domain}
+Coerce finds an element of {\em domain} that corresponds with {\em
+element}.  This is done using one of two methods.  First, there may be
+a ``canonical'' coercion, which is one that is defined via explicit
+``{\sf coerce}'' methods.  These methods take care of mapping Lisp
+expressions, like numbers and atoms, into Weyl domains.  If there are
+no canonical coercion methods then coerce checks to see if there is a
+unique morphism between {\em element}'s domain and {\em domain}. If
+so, this morphism is used to map {\em element} to {\em domain}. If
+there is more than one morphism then an error is signaled.
+
+If the the switch \keylisp{*allow-coercions*} is set to false ({\sf
+nil}) then the canonical maps are the only ones that will be used by
+\keylisp{coerce}.  However, if the user sets
+\keylisp{*allow-coercions*} to {\sf T} then by creating a {\em
+homomorphism} between two domains, the set of canonical maps between
+domains can be extended.  If \keylisp{coerce} cannot find any other
+predefined mapping between the domain of {\em element} and {\em
+domain\/} it then searches the set of all defined homomorphisms.  If
+there exists a {\em canonical homomorphism} between the two domains
+then it is used to map {\em element} into {\em domain\/}. If there
+does not exist a canonical homomorphism but there is exactly one
+homomorphism between the two domains, then it is used.  
+\end{genericdef}
+
+
+As a general rule, Weyl does not provide for implicit coercions of
+arguments to functions. Thus we assume that in the expression {\sf (+
+a b)} the domains of {\sf a} and {\sf b} are the same. If this is
+not the case, the user must explicitly insert a coercion.  The reason
+for this is to deal with problems such as would arise if, for example,
+{\sf a} were $1/2$ and {\sf b} were $x$. The domain of {\sf a} is
+$\Q$, while the domain of {\sf b} is $\Z[x]$. The sum cannot be
+represented in either domain, and in fact we have the choice of
+embedding it in either $\Q[x]$ or $\Z(x)$. The wrong choice could be
+lead to very inefficient algorithms. However, we do make one
+exception. There is assumed to be a canonical homomorphism of the
+rational integers into every domain.  If only one of the arguments to
+one of the four basic arithmetic operations ({\sf +}, {\sf -}, {\sf *}
+and {\sf /}) is an element of $\Z$, then it is automatically coerced
+into the domain of the other argument.
+
+
+\section{Hierarchy of Domains}
+\label{Domain:Hierarchy:Sec}
+
+\begin{figure}
+\begin{center}
+\BoxedEPSF{DomainHier.eps scaled 700}
+\end{center}
+\caption{Algebraic Domains\label{Algebraic:Domains:Fig}}
+\end{figure}
+
+The root of the domain hierarchy is the class \keylisp{domain}.  It
+provides a number of utility routines for managing the set of
+operations and axioms associated with a domain.  However, all
+algebraic domains are built on the higher level class \keylisp{set}.
+
+The basic algebraic domains are given in
+\figref{Algebraic:Domains:Fig}.  The elements of a domain of class
+\keylisp{set} can be compared using the binary operator
+\keylisp{weyli::binary=}.  However, users will find it more convenient
+to use the macro \keylisp{=}, which converts several arguments into a
+sequence of calls to \keylisp{weyli::binary=}.  That is
+\[
+\mbox{\sf (= a b c)} \Longrightarrow
+ \mbox{\sf (and (weyli::binary= a b)(weyli::binary= b c))}.
+\]
+
+\begin{genericdef}{weyli::binary=}{x y}
+Test to see if {\em x} and {\em y} are equal.  Equality is meant in
+the mathematical sense, so two vectors are {\sf =} if their
+components are {\sf =}.
+\end{genericdef}
+
+\subsection{Semigroups, Monoids and Groups}
+
+This section discusses domains that have one operation.  That is, they
+consist of a set $S$ and a binary operation $\oplus$ such that for two
+elements $a$ and $b$ in $S$, $a \oplus b$ is an element of $S$.  The
+simplest interesting class of such domains is a \keyi{semigroup},
+where $\oplus$ is assumed to be \keyi{associative}.  That is, for $a$,
+$b$ and $c$ elements of $S$,
+\[
+(a \oplus b) \oplus c = a \oplus (b \oplus c).
+\]
+
+In Weyl, domains that are semigroups include the class
+\keylisp{semigroup}.  In addition, the operation of a {\sf semigroup}
+is assumed to be {\sf weyli::times}.\footnote{This is a limitation of
+the current implementation of Weyl and will be fixed shortly.}  As
+with {\sf weyli::binary=}, there is a macro {\sf *} that simplifies its
+use.  For instance,
+\[
+\mbox{\sf (* a b c)} = 
+\mbox{\sf (weyli::times (weyli::times a b) c)}.
+\]
+In addition, repeated multiplication can be indicated by
+\keylisp{expt}.  That is,
+\[
+\mbox{\sf (expt a 3)} = 
+\mbox{\sf (weyli::times (weyli::times a a) a)},
+\]
+although it may be computed more efficiently for elements of some domains.
+
+\noindent\functdef{*}{\rest args}
+\begin{genericdef}{weyli::times}{x y}
+Returns the product of two elements of a \keylisp{semigroup}.
+\end{genericdef}
+
+If one wants to compute the product of all the elements of a lists, a
+convenient idiom is to ``{\sf apply}'' the ``{\sf *}'' function to the
+list.  This is not possible with the Weyl ``{\sf *}'' operator since
+it is a macro, not a function.  As a work around for this problem,
+Weyl also provides a function for multiplication caled ``{\sf
+\%times}.''  Semantically, this function is the same as the ``{\sf
+*}'' macro, but the code that would be generated if ``{\sf \%times}''
+were used in place of ``{\sf *}'' is not as efficient.\footnote{The
+need for this function can be eliminated by compiler macros, but this
+solution cannot currently be implemented in a portable manner.}
+
+\functdef{{\percent}times}{\rest args}
+
+\medskip
+\keyi{Monoid}'s are semigroups that contain a multiplicative
+identity.  This element is called \keylisp{one} and may be accessed
+by applying the function \keylisp{one} to the domain. 
+
+\begin{genericdef}{one}{semigroup}
+Returns the multiplicative identity of {\sf monoid}.
+\end{genericdef}
+
+\begin{genericdef}{1?}{elt}
+Returns true if its argument is the multiplicative identity and false
+otherwise.
+\end{genericdef}
+
+In addition, the \keylisp{expt} function is extended so if its second
+argument is 0, it returns the multiplicative identity.
+
+The elements of a \keylisp{group} have multiplicative inverses which can
+be determined using {\sf recip}
+
+\begin{genericdef}{recip}{elt}
+Returns the multiplicative inverse of {\em elt\/}.
+\end{genericdef}
+
+For efficiency reasons it often valuable to have a binary operation
+that multiplies an element by the multiplicative inverse of the
+second argument.  This operation is called \keylisp{weyli::quotient}.
+The macro {\sf /} can be used to simplify its use:
+\[
+\begin{eqalign}
+\mbox{\sf (/ a)}& =  \mbox{\sf (recip a)} \\
+\mbox{\sf (/ a b)}& =  \mbox{\sf (weyli::quotient a b)} \\
+\mbox{\sf (/ a b c)}& 
+   =  \mbox{\sf (weyli::quotient (weyli::quotient a b) c)}
+\end{eqalign}
+\]
+
+In a group, the \keylisp{expt} operation is extended to apply to
+negative second arguments also.  In this case
+\[
+\mbox{\sf (expt x $-n$)} = \mbox{\sf (expt (recip x) $n$)}
+\]
+
+\begin{genericdef}{expt}{a n}
+Multiplies $a$ by itself $n$ times.  If the domain of $a$ just a
+semigroup, then $n$ must be a positive Lisp integer.  When the domain
+of $a$ is a monoid, then $n$ can be equal to zero.  If the domain of
+$a$ is a group then $n$ can be negative. 
+\end{genericdef}
+
+A binary operation $\oplus$ on a semigroup $S$ is \keyi{commutative}
+if for every pair of elements in $a$ and $b$ in $S$, $a \oplus b = b
+\oplus a$.  The domains \keylisp{abelian-semigroup}, \keylisp{abelian-monoid}
+and \keylisp{abelian-group} are similar to the domains
+\keylisp{semigroup}, {\sf monoid} and \keylisp{group} except the
+binary operation is \keylisp{plus} instead of \keylisp{times}.  This
+is the biggest distinction between the domain structure of Weyl and
+the domains of modern algebra.\footnote{It would be better if any
+operation could be declared to be commutative.}
+
+\noindent\functdef{+}{\rest args}\\
+\functdef{{\percent}plus}{\rest args}
+\begin{functiondef}{weyli::plus}{x y}
+Returns the sum of {\em x} and {\em y\/}, which are elements of an
+\keylisp{abelian-semigroup}.  {\sf weyli::plus} is a commutative binary
+operation.
+\end{functiondef}
+The multiple argument version of \keylisp{weyli::plus} is \keylisp{+},
+which is what should be used in all applications.
+
+\begin{functiondef}{zero}{abelian-semigroup}
+Returns the additive identity of an abelian semigroup.
+\end{functiondef}
+
+\noindent\functdef{zero?}{elt}
+\begin{functiondef}{0?}{elt}
+Returns true if its argument is the additive identity and false
+otherwise. 
+\end{functiondef}
+
+The additive inverse of an element of an \keylisp{abelian-group} can
+be obtained using \keylisp{weyli::minus}.  As in the multiplicative
+case, there is a binary operation, \keylisp{weyli::difference} and a
+macro {\sf -} that makes these operations easier to use.
+\[
+\begin{eqalign}
+\mbox{\sf (- a)}& =  \mbox{\sf (weyli::minus a)} \\
+\mbox{\sf (- a b)}& =  \mbox{\sf (weyli::difference a b)} \\
+\mbox{\sf (- a b c)}& 
+   =  \mbox{\sf (weyli::difference (weyli::difference a b) c)}
+\end{eqalign}
+\]
+
+The function ``{\sf \%difference}'' is provided for use when a
+multi-argument version of the ``{\sf -}'' should be passed to another
+function.  The same caveats about efficiency apply here.
+
+Notice that algebraically we consider all of these domains to possess
+only one operation {\sf weyli::times}, or {\sf weyli::plus} in the
+abelian case.  The other operations are either abbreviations, \eg,
+{\sf expt}, or are constructive versions of existential axioms.  For
+instance, a monoid $M$ obeys the axiom: There exists an element $e$ in
+$M$ such that all for elements $a$ of $M$, $e\cdot a = a\cdot e = a$.
+The function {\sf one} just returns the element $e$.
+
+
+\subsection{Rings}
+A ring is a triple $(R, +, \times)$ such that $(R, +)$
+is an abelian grop and $(R, \times)$ is a monoid.  In addition,
+$\times$ distributes over $+$.  That is, for all $a$, $b$ and $c$ in
+$R$
+\[
+a\times (b + c) = (a\times b) + (a \times c)
+\quad\mbox{and}\quad
+(a + b) \times c = (a \times c) + (b \times c).
+\]
+A \keyi{commutative ring} is a ring where the operation $\times$ is
+commutative.  In many parts of algebra and geometry the only rings
+that occur are commutative rings, and more often than not,
+introductory books contain the phrase ``throughout, by ring we mean a
+commutative ring with identity.''  In fact, this is what Weyl means by
+the class \keylisp{ring}.  Instances of the class \keylisp{rng}
+satisfy only the stricter (broader) definition of a ring.
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{|l|p{4in}|} \multicolumn{2}{c}{}\\ \hline 
+$\Z, \Q, \R, \C$ & The ring of rational integers, the field of rational
+numbers, the field of real numbers and the algebraically closed field
+of complex numbers. \\ \hline
+$R[x, y, z]$ & The ring of polynomials in $x$, $y$ and $z$ whose
+coefficients lie in $R$. \\ \hline
+$R(x, y, z)$ & The ring of rational functions (quotients of two
+polynomials) in $x$, $y$ and $z$ whose coefficients lie in the ring
+$R$. \\ \hline
+$R[[t]]$ & The ring of univariate power series with non-negative
+integral exponents in $t$ whose coefficients lie in the ring $R$. \\
+\hline 
+$R((t))$ & The ring of univariate power series with integral exponents
+in $t$ whose coefficients lie in the ring $R$. \\  \hline 
+\end{tabular}
+\end{center}
+\caption{Different Ring Notations\label{RingNotation:Fig}}
+\end{figure}
+
+Examples of rings occur throughout algebra.  The table in
+\figref{RingNotation:Fig} gives some examples of rings and fixes the
+notation that is commonly used.  Additional ring structures are
+discussed in \chapref{Quotients:Chap} and
+\sectref{DifferentialRings:Sec}.  More baroque structures often arise
+in commutative algebra.  For instance, if $S$ is a subring of the ring
+$R$, then the set of polynomials whose constant term lies in $S$ is a
+ring, $R[S)$, called the ring of {\em half open polynomials}.
+
+For some rings, when the multiplicative identity element is added to
+itself a number of times we are left with zero.  That is,
+\[
+\overbrace{1+ 1+ \cdots + 1}^{p {\rm ~times}} = 0.
+\]
+In this case the smallest positive $p$ which has this property is
+called the \keyi{characteristic} of the ring.  If the ring is an
+integral domain, then it is not hard to prove that $p$ must be a prime
+number.  If there is no such $p$, then we say the characteristic of the
+ring is zero.  The function \keylisp{characteristic} returns the
+characteristic of a ring. 
+
+If all of the non-zero elements of a \keylisp{ring} have
+multiplicative inverses, then the ring is a \keylisp{field}.
+
+\subsection{Modules}
+\label{ModuleDomain:Sec}
+
+A module is an abelian group whose elements can be acted upon by
+elements of a ring.  That is, if $M$ is an $A$-module then $M$ is an
+abelian group, and if $x$ is an element of $M$ and $a$ is an element of
+$A$, then $a\cdot x$ is also an element of $M$.  Furthermore, for all $x$
+and $y$ in $M$ and $a$ and $b$ in $A$ we have
+\begin{eqaligntwo*}
+a \cdot (x + y) &= a \cdot x + a \cdot y,
+& a \cdot x + b \cdot x &= (a + b) \cdot x, \\
+a \cdot (b \cdot x) &= (ab) \cdot x,
+& 1\cdot x &= x.
+\end{eqaligntwo*}
+
+If this is the case, $M$ is said to be a (left) $A$-module.  Similarly,
+we can define right $A$-modules.  A ring that is both a left and a
+right $A$-module is simply called an $A$-module.  If $G$ is an
+abelian group then it is trivially a $\Z$-module by the action
+\[
+n\cdot a \mapsto \overbrace{a + a + \cdots + a}^{n {\rm ~times}},
+\]
+and $(-n) \cdot a \rightarrow n \cdot (- a)$ is used to define the
+action for negative $n$.  The integer $0$ sends all elements of $M$ to
+the additive identity of $M$. 
+
+There are numerous examples of modules in mathematics.  A vector space
+with with real coefficients is a $\R$-module.  The elements of an
+ideal of a ring $R$ form an $R$-module.  In Weyl, all domains that are
+instances of the class \keyi{module} represent modules.\footnote{At
+this time we do not distinguish between left and right modules.}  If
+$M$ is an $A$ module, then we call $A$ the \keyi{coefficient domain}
+of $M$.
+
+\begin{functiondef}{coefficient-domain-of}{module}
+Returns the coefficient domain of {\em module}. 
+\end{functiondef}
+
+Note that classes are also defined for \keylisp{free-module} and
+\keylisp{vector-space}.\footnote{A {\em vector space} is a free module
+over a field.}  These classes and the operations available for
+manipulating their elements are discussed in more detail in
+\sectref{FreeModules:Sec} and \sectref{VectorSpace:Sec}.
+
+
+\subsection{Properties}
+
+There are a variety of different properties that algebraic objects can
+possess.  Many of these properties are important in deciding which
+algorithms should be used in a computation.  However, these properties
+can sometimes be rather difficult to determine.  For instance, an
+algebraic number ring may or may not be a unique factorization domain.
+Determining whether it is is quite difficult and we would like to have
+the option of delaying this determination until it is absolutely
+necessary.
+
+Although we could have indicated these properties by the class of the
+domains, and once did, we currently use a different approach.  These
+properties are attached to domains (via their property lists), so that
+it is not necessary to determine the state of the properties when the
+domain is created.\footnote{In fact all the mathematical properties
+should probably be managed in this way.  Taking this approach would
+compromise some of the modularity in creating some domains, so we
+haven not taken this step yet.}
+
+The properties that are currently defined are given in
+\figref{MathProperties:Fig}.  We have given the predicates that can be
+used to determine if the property holds of a particular domain.
+
+
+\begin{figure}
+\begin{center}
+\begin{tabular}{|l|p{4in}|} \multicolumn{2}{c}{}\\ \hline
+\keylisp{complete-set?}& Does the limit of all Cauchy sequences exist
+in this domain?  In practice this means that floating point numbers
+can be coerced into this domain.\\ \hline 
+\keylisp{ordered-domain?}& Can $>$ be applied to the elements of this
+domain \\ \hline 
+\keylisp{integral-domain?} & If true, this domain does not contain any
+zero divisors. \\ \hline 
+\keylisp{euclidean-domain?} & If true, greatest common divisors can be
+defined in this domain. \\ \hline
+\keylisp{gcd-domain?} & If true, not only is this domain euclidean,
+but a \keylisp{gcd} function is actually defined for its elements. \\ \hline
+\keylisp{unique-factorization-domain?} & If true, the elements of this
+domain can be factored uniquely.  \\ \hline
+\end{tabular}
+\end{center}
+\caption{Mathematical Properties\label{MathProperties:Fig}}
+\end{figure}
+
+ 
+%\section{Hierarchy of Conditions}
+
+%What are the conditions that are raised by the algebra package.  All
+%error conditions should be replaced by conditions.  Part of the
+%conditions should be able to answer the question ``what does this
+%error mean?''  Need to work out the hierarchy of conditions.  In the
+%current system there will be very few conditions, since most of what
+%we have is fairly low level.
+

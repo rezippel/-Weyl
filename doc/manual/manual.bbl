@@ -1,0 +1,46 @@
+\begin{thebibliography}{10}
+
+\bibitem{CLOS:Manual}
+{\sc D.~G. Bobrow, L.~G. DeMichiel, R.~P. Gabriel, K.~Kahn, S.~E. Keene,
+  G.~Kiczales, L.~Masinter, D.~A. Moon, M.~Stefik, and D.~L. Weinreb}, {\em
+  {Common} {Lisp} object system specification}, Tech. Rep. 88--002, X3J13, ANSI
+  Common Lisp Standardization Committee, July 1988.
+
+\bibitem{LINPACK:Manual}
+{\sc J.~Dongarra, J.~R. Bunch, C.~B. Moler, and G.~W. Stewart}, {\em {LINPACK}
+  User's Guide}, SIAM Publications, Philadelphia, PA, 1978.
+
+\bibitem{Reduce:Manual}
+{\sc A.~C. Hearn}, {\em Reduce 3 user's manual}, tech. rep., The RAND Corp.,
+  Santa Monica, CA, 1986.
+
+\bibitem{Jenks84}
+{\sc R.~D. Jenks}, {\em 11 keys to new {Scratchpad}}, in EUROSAM '84, J.~Fitch,
+  ed., vol.~174 of Lecture Notes In Computer Science, Berlin-Heidelberg-New
+  York, 1984, Springer-Verlag, pp.~123--147.
+
+\bibitem{Maple:Manual}
+{\sc Maple Group}, {\em Maple}, Waterloo, Canada, 1987.
+
+\bibitem{Matlab:Manual}
+{\sc C.~B. Moler}, {\em Matlab user's guide}, Tech. Report CS81--1, Dept. of
+  Computer Science, University of New Mexico, Albuquerque, NM, 1980.
+
+\bibitem{EISPACK:Manual}
+{\sc B.~T. Smith, J.~M. Boyle, Y.~Ikebe, V.~C. Klema, and C.~B. Moler}, {\em
+  Matrix Eigensystem Routines: EISPACK Guide}, Springer-Verlag, New York, NY,
+  second~ed., 1976.
+
+\bibitem{CommonLisp:Manual}
+{\sc G.~L. {Steele Jr.}}, {\em {Common} {Lisp}, The Language}, Digital Press,
+  Burlington, MA, second~ed., 1990.
+
+\bibitem{Macsyma:Manual}
+{\sc Symbolics, Inc.}, {\em MACSYMA Reference Manual}, Burlington, MA,
+  14th~ed., 1989.
+
+\bibitem{Wolfram88}
+{\sc S.~Wolfram}, {\em Mathematica: A System for Doing Mathematics by
+  Computer}, Addison-Wesley, Redwood City, CA, 1988.
+
+\end{thebibliography}

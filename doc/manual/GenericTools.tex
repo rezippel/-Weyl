@@ -1,0 +1,375 @@
+% -*- Mode: LaTeX -*-
+% $Id: GenericTools.tex,v 1.4 1995/03/31 15:31:15 rz Exp $
+
+\chapter{Generic Tools}
+\label{GenericTools:Chap}
+  
+Some facilities needed by symbolic computing routines are more
+generally useful. For instance, it is occasionally necessary to
+perform some function for every permutation of the elements of a set.
+To capture this idiom, Weyl provides a new control structure, called
+{\sf permute}. This control structure, and other combinatorial control
+structures, are described in \sectref{CombinTools:Sec}. Other data and
+control structures that are not directly tied to mathematical
+computation are given in the other sections.
+
+\section{Combinatorial Tools}
+\label{CombinTools:Sec}
+  
+Weyl provides control abstractions that are often useful for
+computations that involve combinatorial enumeration and
+searching. These control structures are {\sf permute} and {\sf choose},
+which enumerate all permutations of a sequence and all subsets of a
+fixed size of a sequence.
+  
+\begin{specialdef}{permute}{sequence (var . options) \body body}
+{\em sequence} is a sequence of elements.\footnote{At the moment this
+control structure is only implemented for lists.}  The variable {\em
+var} is repeatedly bound to the different permutations of {\em
+sequence}, and {\em body} is evaluated each time. The options are
+provided to specify even and odd permutations, but are not at this
+point implemented.
+\end{specialdef}
+  
+For example, the following code will print all permutations of the
+list {\sf (a b c)} and count their number:
+\begin{code}
+> (let ((count 0))
+    (permute ' (a b c) (p)
+      (print p)
+      (incf count)) 
+    (format t "~%~D permutations total. ~%" count))
+  
+(C B A)
+(B C A)
+(C A B)
+(A C B)
+(B A C)
+(A B C)
+6 permutations total.
+NIL
+\end{code}
+  
+\begin{specialdef}{choose}{set (var n . options) \body body}
+While the first argument to {\sf permute} must be ordered, the first
+argument to {\sf choose} need only be a set (but again, only lists are
+currently implemented). The variable {\em var} is bound to each subset
+of {\em set} that has precisely {\em n} elements and {\em body }is
+evaluated in each case. At the moment no options are permitted.
+\end{specialdef}
+  
+A \keyi{partition} of a positive integer $n$ is a representation of $n$
+as a sum of positive integers. The following control structure is used
+to enumerate partitions.
+  
+\begin{specialdef}{partition}{(var n . options) \body body}
+The argument {\em n} is assumed to be an integer.
+This control structure repeatedly binds {\em var} to
+additive partitions of {\em n} and then evaluates the
+{\em body}.  The options allow one to control which partitions
+of {\em n} are produced. The options are
+
+\begin{center}
+\begin{tabular}{lp{4in}}
+{\tt :number-of-parts} & The number of parts each partition is
+allowed to contain. \\
+{\tt :minimum-part} & The minimum value each for each of the components
+of the partition. \\
+{\tt :maximum-part} & The maximum value each for each of the components
+of the partition. \\
+{\tt :distinct?} & If specified as {\tt T} then each of the
+components of the partition must be distinct. 
+\end{tabular}
+\end{center}
+
+\noindent
+{\sf Partition} returns no values.
+\end{specialdef}
+  
+The following examples illustrate the use of the partition control
+structure. First, compute all of the partitions of 6:
+\begin{code}
+> (partition (l 6) (print l))
+(1 1 1 1 1 1)
+(2 1 1 1 1)
+(3 1 1 1)
+(2 2 1 1)
+(4 1 1)
+(3 2 1)
+(5 1)
+(2 2 2)
+(4 2)
+(3 3)
+(6)
+\end{code}
+  
+\noindent
+Now restrict the partitions to those that do not contain $1$'s or
+those that consist of precisely $3$ components:
+\begin{code}  
+> (partition (l 6 :minimum-part 2)
+    (print l))
+(2 2 2)
+(4 2)
+(3 3)
+(6)
+  
+> (partition (l 6 :number-of-parts 3)
+    (print l))
+(4 1 1)
+(3 2 1)
+(2 2 2)
+\end{code}
+  
+We can further restrict the partitions to only include components that
+contain components no larger than $3$ and to those partitions that
+consist of distinct components.
+\begin{code}  
+> (partition (l 6 :number-of-parts 3 :maximum-part 3)
+    (print l))
+(3 2 1)
+(2 2 2)
+  
+> (partition (l 6 :number-of-parts 3 :maximum-part 3 :distinct? t)
+    (print l)) 
+(3 2 1)
+  
+> (partition (l 6 :distinct? t)
+    (print l))
+(3 2 1)
+(5 1)
+(4 2)
+(6)
+\end{code}
+  
+It is well known, and easy to prove, that the number of partitions of
+an integer $n$ into $m$ parts is equal to the number of partitions of
+$n$ where the largest component of the partition is $m$. We can check
+this numerically with the following functions. The first function
+counts the number of partitions of $n$ with exactly $m$ parts. For
+this the {\sf :number-of-parts} option suffices.
+\begin{code}
+(defun partition-count-fixed-parts (n m)
+  (let ((cnt 0))
+    (partition (part n :number-of-parts m)
+      (declare (ignore part))
+      (incf cnt))
+      cnt))
+\end{code}
+  
+The function {\sf partition-count-exact-max} computes the
+number of partitions where the maximum component is
+exactly {\sf m}. In this case, the {\sf :maximum-part} option helps
+filter the partition, but then an additional test needs
+to be applied to ensure that each partition actually
+has an element of size {\sf m}.
+\begin{code}
+(defun partition-count-exact-max (n m)
+  (let ((cnt 0))
+    (partition (part n :maximum-part m)
+      (when (= m (apply #'cl::max part))
+        (incf cnt)))
+    cnt))
+\end{code}
+  
+Finally we provide a routine for testing the functions given above.
+\begin{code}
+(defun partition-test-1 (n m)
+  (let ((part-count1 (partition-count-fixed-parts n m))
+        (part-count2 (partition-count-exact-max n m)))
+    (list (= part-count1 part-count2)
+          part-count1 part-count2)))
+  
+> (partition-test-1 10 3)
+(T 8 8)
+
+> (partition-test-1 15 3)
+(T 19 19)
+  
+> (partition-test-1 15 4)
+(T 27 27)
+\end{code}
+  
+\section{Memoization}
+\label{Memoization:Sec}
+  
+It often occurs that the straightforward way of expressing an
+algorithm is quite inefficient because it performs a great deal of
+recomputation of values that were previously computed.  The simplest
+example along these lines is the Fibonacci function
+\begin{code}
+(defun fib (n)
+  (if (< n 2) 1
+      (+ (fib (- n 1)) (fib (- n 2)))))
+\end{code}
+  
+Due to the double recursion, this implementation can take time
+exponential in {\sf n}. By caching values of {\sf (fib n)} to avoid
+recomputation, it is possible to reduce this to a computation that is
+linear in {\sf n}. This is easily done using the control abstraction
+{\sf memoize}. For instance, we have the following efficient version
+of the Fibonacci function:
+ 
+\begin{code}
+(defun fib-memo (n)
+  (memoize `(fib ,n) 
+    (if (< n 2) 1 
+        (+ (fib-memo (- n 1)) (fib-memo (- n 2))))))
+\end{code}
+
+The \keylisp{memoize} form should be understood as follows.  The first
+argument is an expression that identifies a particular computation.
+The above example, the form {\sf `(fib ,n)} represents the computation
+of the $n$-th Fibonacci number.  The body of the \keylisp{memoize}
+form contains the code that actually performs the computation.  The
+\keylisp{memoize} form checks a cache to see if the computation
+indicated by the first argument has been previously performed.  If so,
+the value returned by the earlier computation is returned immediately.
+If not the body is executed and the value cached for future use.
+  
+The cache used by the \keylisp{memoize} control structure is handled
+by the class \keylisp{weyli::has-memoization}. The domain of general
+expressions (discussed in \chapref{General:Chap}) is always a subclass
+of \keylisp{weyli::has-memoization} and is the domain with which
+memoization is usually associated.  The internal function
+\keylisp{weyli::{\percent}memoize} allows one to associate a memoization with
+any subclass of \keylisp{weyli::has-memoization}.
+
+\begin{methoddef}{weyli::{\percent}memoize}{domain expression \body body}
+Each time this form is executed, it checks to see if {\em expression}
+is cached in {\em domain}'s memoization cache.  If so, the value in
+the cache is returned without executing the body. If {\em expression}
+is not found in the cache, then the forms in body are evaluated, and
+the value of the last form is both returned and saved in {\em
+domain}'s memoization cache.
+\end{methoddef}
+  
+It is usually much more convenient to use the {\sf memoize} control
+structure:
+  
+\begin{specialdef}{memoize}{expression \body body}
+Performs the same functions as {\sf weyli::\%memoize} except
+that the domain used is {\sf *general*}. 
+\end{specialdef}
+  
+One should note that the expression which is used as the index of the
+cache cannot be a constant.  It should contain all of the information
+that can influence the value returned by the body.  Also, at this
+writing, only the first value returned by the expression being
+memoized is actually cached. The other values are ignored.
+  
+
+\section{Tuples}
+  
+Instances of the class \keylisp{weyli::tuple} are simply
+one-dimensional vectors. Generally, one doesn't create instances of
+bare tuples, but rather includes the \keylisp{weyli::tuple} class with
+some other classes to create more interesting objects. For instance,
+Weyl vectors are instances of a class that than includes tuple and
+domain-element.  When creating an instance of a \keylisp{weyli::tuple}
+one needs to initialize a slot that contains the values of the tuple.
+This can be done by using the {\sf :values} initialization keyword.
+For instance,
+\begin{code}
+> (setq tup (make-instance 'weyli::tuple :values '(1 2 3)))
+<1, 2, 3>
+\end{code}
+  
+\noindent
+The initialization value can be either a list or a Lisp vector.
+  
+Since tuples are instances of a class, various methods can be
+overloaded to work with them. The simplest such function is {\sf
+length}, which computes the number elements in the tuple. Another
+useful function is {\sf ref}, which accesses different elements of the
+tuple by their index.  The generic function {\sf ref} is used in place
+of the Common Lisp functions {\sf aref} or {\sf svref}.
+  
+\begin{macrodef}{ref}{sequence \rest indices}
+Accesses the indicated elements of sequence. Tuples
+are one-dimensional arrays so only one index is allowed.
+The indexing scheme is zero based, so the first element
+of the tuple has index $0$, the second $1$ and so on.
+  
+For example,
+\begin{code}
+> (list (ref tup 0) (ref tup 2) (ref tup 1))
+(1 3 2)
+\end{code}
+\end{macrodef}  
+
+It is sometimes useful to be able to convert a tuple into a list of
+its elements. This can be done with the following function:
+  
+\begin{methoddef}{list-of-elements}{tuple}
+Returns a list of the elements of {\em tuple}.  For example,
+\begin{code}
+> (list-of-elements tup)
+(1 2 3)
+\end{code}
+\end{methoddef}
+  
+The following functions extend the Common Lisp mapping functions to
+work with tuples as well as the usual sequences of Common Lisp.
+  
+\begin{methoddef}{map}{type function tuple \rest sequences}
+The number of arguments of {\em function} is
+expected to be one more than the number of elements
+in {\em sequences}.  {\em function} is applied to each element of
+{\em tuple} and the corresponding elements of each of the
+elements of {\em sequences}. For instance,
+\begin{code}
+> (map 'tuple #'cons tup tup)
+<(1 . 1), (2 . 2), (3 . 3)>
+\end{code}
+\end{methoddef}
+
+Algebraic objects in Weyl have a slot that indicates the algebraic
+domain of which the object is an element.  When creating an instance
+of such an object it is necessary to indicate this domain.  If the
+sequence returned by {\sf map} requires this information then the
+domain will be extracted from the tuple.  If it is necessary to
+explicitly specify the domain of the resulting tuple, the following
+function may be used.
+  
+\begin{methoddef}{map-with-domain}{type domain function tuple \rest sequences}
+Similar to {\sf map} but the domain of the resulting tuple will be
+{\em domain}.
+\end{methoddef}
+
+\section{Arithmetic with Lists}
+
+In Lisp, lists are extremely convenient data structures, especially
+for temporary results in computations.  To make them even more
+useful, Weyl provides a couple of functions for performing arithmetic
+operations with lists.  These routines use the Weyl arithmetic
+operations, and thus can be used both for arrays and lists that contain
+Lisp numbers and those those that contain Weyl's mathematical objects
+[{\em This section needs to be fleshed out.  I believe that there are
+many similar operations that should be added.  Perhaps we should just
+overload the standard arithmetic operations?  --RZ}] \quad
+[{\em Or we could do something like the {\tt Listable} attribute
+in Mathematica. --TW}]
+
+
+\begin{methoddef}{list-inner-product}{list1 list2}
+Computes the sum of the pairwise product the elements of {\em list1} and
+{\em list2}. 
+\end{methoddef}
+
+\begin{methoddef}{list-expt}{base-list expt-list}
+Returns a list of consisting of the elements of {\em base-list} raised
+to the power of the corresponding element of {\em expt-list}.
+\end{methoddef}
+
+\begin{methoddef}{array-times}{array1 array1}
+Checks to make sure the arguments of the of the right dimensions and
+then computes a matrix product storing the result in a new,
+appropriately sized matrix.
+\end{methoddef}
+
+
+\section{AVL Trees}
+  
+  
+

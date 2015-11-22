@@ -1,0 +1,156 @@
+Changes as of 1.211  -- RZ
+
+* Did a radical cleanup of the way numbers work.  I don't think I've
+  fixed any bugs, but the reorganization makes the numbers code about
+  half the size it used to be.  This affects numbers.lisp,
+  bigfloat.lisp and mormphisms.lisp
+
+* Introduced a new file functions.lisp that contains all the code for
+  dealing with special functions (sin, cos, etc.) and
+  "applicable-functions", .i.e., lambda expressions.  Several minor
+  bug fixes along the way.   
+
+* Shadowed the union and intersection variables to weyli package.
+  There are trampoline functions to the common lisp version in
+  lisp-support.  
+
+* As per Rick's request, make-chain now takes two arguments, not a
+  rest argument.  The second argument is a list of pairs of simplices
+  and coefficients. 
+
+* binary= has been extended to work on points (sort of...)
+
+Changes as of 1.218  -- RZ
+
+* Changed a number of weyli::zerop's to cl::zerop's.  weyl::zerop is
+  provided for compatibility with Common Lisp and generally shouldn't be
+  used.  0? is more euphonious.  This change affected avl.lisp,
+  epolynomial.lisp, numbers.lisp 
+
+* Changed an occurance of minusp in quotient-fields.lisp to minus?.
+  Again, minusp is provided for compatibility with lisp. 
+
+* Changed make-union so that it does not care what the type of its
+  variables and sets are.  This probably should be backed out of at some
+  point.  But I didn't want deal with the fact that complexes are note
+  sets yet.
+
+* The protocol for %map-over-faces was changed from having two
+  arguments and one required to having three required.  Since the only
+  calls are through the macro map-over-faces, this isn't a problem.
+  This was done in an earlier release, but there were two definitions of
+  %map-over-faces that hadn't been updated. 
+
+* The print method for free-module-element was modified so as not to
+  depend on the dimension of the domain of the free modoule element.
+  This permits making vectors of general expressions. 
+
+
+Changes of 1.222  -- RZ
+
+
+Made a couple of changes so that quaternion's can be multiplied.
+First, quaternion's themselves had "domain-element" as the first
+element of their sub-class list.  This caused several of the
+arithmetic operations to get the default method instead of the
+quaternion-quaternion method.  The need for care in ordering of
+sub-classes is due to the change from using around methods for plus
+and times to using standard methods.
+
+In addition a change was required in (:method times (t free-module-element)) 
+since they are both around methods and would sometimes be invoked when
+they should pass to the next method.  This is symptomatic of a rather
+subtle problem.
+
+
+Changes of 1.238  -- RZ
+
+These changes are completely stylistic.  In those cases where
+call-next-method was called with precisely the same arguments as the
+original method, I've deleted those arguments.  This is actually
+faster on some Lisps and will allow for easier automatic translation.
+
+In addition I've added the walk.lisp file to the Weyl system although
+its not actually loaded or compiled by the defsystem file yet.  This
+will change. 
+
+Changes as of 1.243  -- RZ
+
+* Fixed some bugs with binary comparision (binary=, binary> and
+  binary>=) of a lisp number and a Weyl number.  Also fixed a bug with
+  the quotient of two rational numbers. 
+
+* With Sekhar's help fixed a bug in univariate interpolation (in sparsegcd)
+
+* Renamed GET-TPOWER-SERIES (which used to retrurn a domain), to
+  GET-TPOWER-SERIES-DOMAIN, since MAKE-TPOWER-SERIES returns a power
+  series.  Moved the symbols GET-TPOWER-SERIES-DOMAIN and TAYLOR to the
+  Weyl package.
+
+* Rewrote and simplified much of tpower.lisp.  Most of the changes have
+  also been propogated to taylor.lisp, except that solve-diff-eqn has
+  not been updated, and as a consequence I've commented it out of the
+  file.  Reversion also still needs some work.  
+
+Changes as of 1.245  -- RZ
+
+More small fixes to power series with branching orders different from 1.
+
+
+Changes as of 1.259  -- RZ
+
+* Fixed a bug in prime? (lisp-numbers.lisp) to ensure that only
+  positive integers are indicated as being prime.
+
+* Minor reformatting and cleanup of determinant code in matrix.lisp and a 
+  reorganization of sparse-determinant.
+
+* Fixed a bugs in modify-branch-order, set-branch-order and coercing a
+  ge-variable into truncated power series (tpower.lisp)
+
+* Exported REVERSION which computes the reversion of a power series,
+  and added a substitute method for substituting an expression into a
+  truncated power series.
+
+* In topology.lisp, changed the arguments to make-cell-complex from a
+  rest list to just a list of cell.  Otherwise, there would be a limit
+  to the number of cells that could be passed to make-cell-complex.
+
+Changes as of 1.326  -- RZ
+
+In many places, I have removed the print-object methods and replaced them by 
+functions.
+
+In algebraic-domains.lisp
+
+* Lots of defsubsts were added for group, ring, field etc.  (group?,
+  ring?, field?)  This was done so that in other sections of the code
+  we could eliminate explicit dependencies on the class structure of
+  domains in anticipation of the new-domain system.  A number of uses of 
+  (typep x 'field)  throughout the system were changed to (field? x).
+
+In matrix.lisp
+
+* Changed with-matrix-dimensions so that declarations can be included
+  right after the the matrix is specified.
+
+* removed the first arguments from independent-rows and independent-cols
+  since they are not being used.
+
+In lisp-numbers.lisp
+
+* SYM-MOD is always assumed to have LISP integer arguments.  I've
+  changed some of the functions called from, for example, mod -> cl:mod.
+  This should speed things up significantly.
+
+In space-classes.lisp
+
+* Changed chain-module to inherit from a free-module instead of a
+  module.  This way it includes the class dimensional-domain and I was
+  able to eliminate the dim slot.
+
+In tpower.lisp and taylor.lisp
+
+* Changed with-tpower-series so that it could accept declarations at
+  the beginning of its body.  In substitute this was used to eliminate
+  some warning messages.

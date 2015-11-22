@@ -1,0 +1,144 @@
+\setcounter{secnumdepth}{3}     % Number subsubsection's as well
+\setcounter{tocdepth}{3}        % Also put in contents 
+
+%% Use the following instead of \% in any expression that is to be
+%% indexed!
+\def\percent{\char37}
+
+%% Used by indexing tools
+\def\bold#1{{\bf #1}}
+
+\def\functdef#1#2{%
+  {\tt #1~}{{%
+    \def\key{{\rm $\&$key~}}%
+    \def\rest{{\rm $\&$rest~}}%
+    \def\body{{\rm $\&$body~}}%
+    \def\optional{{\rm $\&$optional~}}%
+    \index{#1@{\sf #1}}%
+    \em #2}}}
+
+\newenvironment{functiondef}[2]%
+{\begingroup
+\def\key{{\rm $\&$key~}}%
+\def\rest{{\rm $\&$rest~}}%
+\def\body{{\rm $\&$body~}}%
+\def\optional{{\rm $\&$optional~}}%
+\medskip
+\par\noindent
+{\sf #1~}{\em #2}\hfill {\rm [{\em Function}]}\\
+\index{#1@{\sf #1}|bold}
+\endgroup
+\begin{quote} \vskip-\topsep \vskip-\topsep}%
+{\end{quote}}
+
+\newenvironment{specialdef}[2]%
+{\begingroup
+\def\key{{\rm $\&$key~}}%
+\def\rest{{\rm $\&$rest~}}%
+\def\body{{\rm $\&$body~}}%
+\def\optional{{\rm $\&$optional~}}%
+\medskip
+\par\noindent
+{\sf #1~}{\em #2}\hfill {\rm [{\em Special Form}]}\\
+\index{#1@{\sf #1}|bold}
+\endgroup
+\begin{quote} \vskip-\topsep \vskip-\topsep}%
+{\end{quote}}
+
+\newenvironment{methoddef}[2]%
+{\begingroup
+\def\key{{\rm $\&$key~}}%
+\def\rest{{\rm $\&$rest~}}%
+\def\body{{\rm $\&$body~}}%
+\def\optional{{\rm $\&$optional~}}%
+\medskip
+\par\noindent
+{\sf #1~}{\em #2}\hfill {\rm [{\em Method}]}\\
+\index{#1@{\sf #1}|bold}
+\endgroup
+\begin{quote} \vskip-\topsep \vskip-\topsep}%
+{\end{quote}}
+
+\newenvironment{genericdef}[2]%
+{\begingroup
+\def\key{{\rm $\&$key~}}%
+\def\rest{{\rm $\&$rest~}}%
+\def\body{{\rm $\&$body~}}%
+\def\optional{{\rm $\&$optional~}}%
+\medskip
+\par\noindent
+{\sf #1~}{\em #2}\hfill {\rm [{\em Generic}]}\\
+\index{#1@{\sf #1}|bold}
+\endgroup
+\begin{quote} \vskip-\topsep \vskip-\topsep}%
+{\end{quote}}
+
+\newenvironment{macrodef}[2]%
+{\begingroup
+\def\key{{\rm $\&$key~}}%
+\def\rest{{\rm $\&$rest~}}%
+\def\body{{\rm $\&$body~}}%
+\def\optional{{\rm $\&$optional~}}%
+\medskip
+\par\noindent
+{\sf #1~}{\em #2}\hfill {\rm [{\em Macro}]}\\
+\index{#1@{\sf #1}|bold}
+\endgroup
+\begin{quote} \vskip-\topsep \vskip-\topsep}%
+{\end{quote}}
+
+
+%% General things to make things easier
+
+\def\key#1{#1\index{#1}}
+\def\keyi#1{{\em #1}\index{#1}}
+\def\keylisp#1{{\sf #1}\index{#1@{\sf #1}}}
+
+\def\Cp+{\rm{\hbox{C\hskip -0.1ex\raise 0.5ex\hbox{\tiny +\hskip-0.3ex+}}}}
+\def\Weylp+{\rm{\hbox{Weyl\hskip -0.1ex\raise 0.5ex\hbox{\tiny +\hskip-0.3ex+}}}}
+
+\newcommand{\degree}{^{\circ}}
+
+\newcommand{\ie}{{\em i.e.}}
+\newcommand{\viz}{{\em viz.}}
+\newcommand{\eg}{{\em e.g.}}
+\newcommand{\etal}{{\em et~al.}}
+
+% Math Symbols:  These require you include amssymbols.sty
+\newcommand{\A}{{\Bbb A}}    % Affine space
+\newcommand{\C}{{\Bbb C}}
+\newcommand{\F}{{\Bbb F}}
+\newcommand{\N}{{\Bbb N}}
+\renewcommand{\P}{{\Bbb P}}   % Projective space
+\newcommand{\Q}{{\Bbb Q}}
+\newcommand{\R}{{\Bbb R}}
+\newcommand{\Z}{{\Bbb Z}}
+
+% I always get confused about style, so:
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}{Definition}
+\newtheorem{corollary}{Corollary}
+\newtheorem{conjecture}{Conjecture}
+\newtheorem{fact}{Fact}
+\newtheorem{problem}{Problem}
+\newenvironment{proof}{\noindent{\bf Proof:}}{\unskip~~$\QEDbox$\medskip}
+\def\QEDbox{\fbox{\rule{0ex}{1ex}}}
+
+\newcommand{\chapref}[1]{Chapter~\ref{#1}}
+\newcommand{\sectref}[1]{Section~\ref{#1}}
+\newcommand{\appenref}[1]{Appendix~\ref{#1}}
+\newcommand{\thmref}[1]{Theorem~\ref{#1}}
+\newcommand{\propref}[1]{Proposition~\ref{#1}}
+\newcommand{\conjref}[1]{Conjecture~\ref{#1}}
+\newcommand{\corref}[1]{Corollary~\ref{#1}}
+\newcommand{\defref}[1]{Definition~\ref{#1}}
+\newcommand{\factref}[1]{Fact~\ref{#1}}
+\newcommand{\lemref}[1]{Lemma~\ref{#1}}
+\newcommand{\figref}[1]{Figure~\ref{#1}}
+\newcommand{\tableref}[1]{Table~\ref{#1}}
+\newcommand{\eqnref}[1]{(\ref{#1})}
+
+

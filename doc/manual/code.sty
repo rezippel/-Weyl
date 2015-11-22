@@ -1,0 +1,22 @@
+
+\begingroup \catcode `|=0 \catcode `[= 1
+\catcode`]=2 \catcode `\{=12 \catcode `\}=12
+\catcode`\\=12 |gdef|@sxcode#1\end{code}[#1|end[code]]
+|endgroup
+
+\@namedef{code}{\list{}{\rightmargin\leftmargin}\item[]%
+  \small\@verbatim \frenchspacing\@vobeyspaces \@sxcode}
+%\expandafter\let\csname endcode\endcsname =\endtrivlist
+\def\endcode{\endtrivlist\vskip\topsep\endlist}
+
+
+\begingroup \catcode `|=0 \catcode `[= 1
+\catcode`]=2 \catcode `\{=12 \catcode `\}=12
+\catcode`\\=12 |gdef|@sxscalecode#1\end{scalecode}[#1|end[scalecode]]
+|endgroup
+
+\@namedef{scalecode}{\list{}{\rightmargin\leftmargin}\item[]%
+  \@verbatim \frenchspacing\@vobeyspaces \@sxscalecode}
+%\expandafter\let\csname endscalecode\endcsname =\endtrivlist
+\def\endscalecode{\endtrivlist\vskip\topsep\endlist}
+

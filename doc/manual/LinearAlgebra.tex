@@ -1,0 +1,120 @@
+% -*- Mode: LaTeX -*-
+% $Id: LinearAlgebra.tex,v 1.1 1995/01/30 02:02:03 rz Exp $
+\chapter{Linear Spaces}
+\label{Linear:Chap}
+
+The general approach in Weyl is to use functors to create more complex
+domains from simple domains. The simplest such functors are those that
+takes a ring or field $R$ and produces a vector space whose elements
+lie in $R$. This chapter discusses these domains and the operations
+that apply to their elements. The simplest of these domains are free
+modules and vector spaces. Both are modules (you can add their
+elements and multiply them by elements of $R$). The difference is that
+elements of a vector space can also be divided by elements of $R$,
+\ie, $R$ is a field. Free modules and vector spaces are discussed in
+\sectref{FreeModules:Sec} and \sectref{VectorSpace:Sec} respectively.
+
+\section{Vector Spaces}
+\label{VectorSpace:Sec}
+
+Vector spaces are free modules where the coefficient domain is a field.
+
+\begin{functiondef}{get-vector-space}{domain dim}
+Create a vector space of dimension {\em dim} where the vectors'
+components are all elements of {\em domain}.  {\em Domain} must be a
+field.
+\end{functiondef}
+
+
+\section{General Matrices}
+\label{GMatrix:Sec}
+
+\begin{functiondef}{get-matrix-space}{ring}
+Returns a general matrix domain, where the entries in the matrices are
+elements of {\em ring\/}.
+\end{functiondef}
+
+\begin{functiondef}{make-element}{domain value \rest values}
+Make an element of the module {\em domain}, where the first component
+is {\em value}, etc.  
+\end{functiondef}
+
+The following two functions return square matrices whose off diagonal
+elements are all zero. Its diagonal elements are $0$ for
+\keylisp{zero-matrix} and $1$ for \keylisp{one-matrix}.
+
+\begin{flushleft}
+\functdef{zero-matrix}{matrix-domain \optional rank} \\
+\functdef{one-matrix}{matrix-domain \optional rank}
+\end{flushleft}
+
+\begin{functiondef}{matrix-dimensions}{matrix}
+Returns the dimensions of this particular matrix.
+\end{functiondef}
+
+\begin{functiondef}{ref}{vector i j}
+Returns the $(i,j)$ element (zero based) of {\em vector\/}.  If $i$ or
+$j$ is {\sf :*}, then a row or column vector is returned.
+\end{functiondef}
+
+\begin{functiondef}{with-matrix-dimensions}{(dim1 dim2 \optional array)
+matrix \body body}
+This control abstraction binds {\em dim1} and {\em dim2} to the
+dimensions of {\em matrix}.  If {\em array} is provided, it is bound
+to an array that whose elements are the elements of the {\em
+matrix\/}.  This control structure can lead to substantially more
+efficient manipulation of dense matrices.  
+
+Ultimately, {\em array} will turn into an efficient accessor for the
+elements of {\em matrix} so that this technique will work with other
+than dense matrices.
+\end{functiondef}
+
+\begin{functiondef}{transpose}{matrix}
+Transpose {\em matrix\/}.
+\end{functiondef}
+
+\begin{functiondef}{jacobian}{function-list var-list}
+Returns the Jacobian of {\em function-list} with respect to {\em
+vector-list}.  These should really be vectors, but list will work
+also.   
+\end{functiondef}
+
+\begin{functiondef}{direct-sum}{\rest matrices}
+Assumes the matrices all have the same
+number of rows, $n$.  It returns a matrix of $n$ rows, where
+each row is the concatenation of the rows of each of
+its arguments.
+\end{functiondef}
+
+\begin{functiondef}{determinant}{matrix}
+Returns the determinant of the {\em matrix}.
+\end{functiondef}
+  
+\begin{functiondef}{sparse-determinant}{matrix}
+Returns the determinant of the {\em matrix}.
+\end{functiondef}
+  
+\begin{functiondef}{subdeterminant}{matrix}
+Returns the determinant of a nonsingular submatrix of the {\em matrix}
+of maximum rank.
+\end{functiondef}
+  
+\begin{functiondef}{hermite}{matrix}
+Returns the \keyi{Hermite normal} form of the {\em matrix}.
+At the moment, the method is implemented only for matrices
+over the ring of integers.
+\end{functiondef}
+  
+\begin{functiondef}{smith}{matrix}
+Returns the vector of diagonal elements of the \keyi{Smith normal
+form} of the {\em matrix}.  At the moment, the method is implemented
+only for matrices over the ring of integers.
+\end{functiondef}
+  
+\section{Matrix Groups}
+
+
+
+
+

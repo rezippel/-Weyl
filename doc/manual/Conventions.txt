@@ -1,0 +1,115 @@
+The following conventions are used in editing the sources for the Weyl manual.
+
+===========  General conventions for text
+
+The macros \eg, \ie, \viz, are provided.  Their recommented use is to
+that they be followed by a comma.
+
+
+=========== Cross references and labelling
+
+Every chapter and section should be referenced.  The conventioned used
+for referencing both chapters and sections is that the first part of
+the label should be some shortened form of the name of the chapter or
+section. The shortened form typically uses capital letters to separate
+words (prefered form), or colons (old usage).  This is followed either
+:Chap or :Sec for chapters and sections respectively.  For example:
+
+
+\chapter{General Expressions}
+\label{General:Chap}
+
+or
+
+\section{Class Structure}
+\label{ClassStruct:Gen:Sec}
+
+or
+
+\subsection{Display tools}
+\label{DisplayTools:Sec}
+
+
+Since the section title "Class Structure" may appear in several
+chapters, the suffice ":Gen" has been added to indicate that this is
+in the "General Expressiosn chapter.
+
+In the body of text, you can refer to chapter or section labels using
+the forms "\chapref" or "\sectref".  These forms expand as follows:
+
+\chapref{General:Chap}         ==>  Chapter 3
+\sectref{ClassStruct:Gen:Sec}  ==>  Section 3.2
+\sectref{DisplayTools:Sec}     ==>  Section 3.4.1
+
+Notice that \sectref can be used for sections and subsections.  These
+macros expand into capitalized versions of the Chapter and Section so
+they can be used a the beginning of sentences.
+
+
+When equations are labeled, their label ends in ":Eq".  The can be
+refered to by the command 
+
+\eqnref{SomeEquation:Eq}  => (1)
+
+
+===========  Code
+
+Code is indicated in the running text using the sans serif font.  This
+is done using the macro "\sf".  For instance,
+
+ To create a list in Lisp one uses the {\sf list} or {\sf cons} functions.
+
+* When Weyl functions are used in running text, you should use the
+* \keylisp form to ensure that a reference to this use of the function
+* occurs in the index.
+
+===========  Function Definitions
+
+There are four environments that can be used to create function
+definitions.  
+
+functiondef  - For regular lisp funcitons
+methoddef    - For methods 
+genericdef   - For generic functions
+specialdef   - For special forms, e.g., control abstractions
+macrodef     - For macros
+
+All these environments use the same syntax.  They take two
+arguments---one for the name of the form being defined, and one for
+the argument list for the forms.  The body of the environment is the
+text that describes the form being defined.  An example is given
+below:
+
+\begin{methoddef}{deriv}{exp var \rest vars}
+Computes the derivative of {\em exp} with respect to {\em var} and
+simplifies the results.  This is done for {\em var} and each element
+of {\em var\/}.  Thus the second derivative of {\em exp} with respect
+to {\sf T} could be computed by: {\sf (deriv {\em exp} 't 't)}.
+\end{methoddef}
+
+Within the arugment lists, additional macros are provided for
+indicating the &rest, &optional and &key.  These are \rest, \optional
+and \key.
+
+
+
+
+===========  Indexing
+
+There are three commands for inserting index information into the
+manual: 
+
+\key{some text}     Inserts "some text" into the index and also into
+                    the running text.  
+
+\keyi{some text}    Same as above, but the text is emphasized in the
+                    running text.
+
+\keylisp{some text} Same as \key except that the text is in the lisp
+                    code font both in the running text and the index.
+
+
+===========  Diagrams
+
+I use the boxepsf.tex macro package for including pictures.  There is
+a complete manual for this available in ~rz/CoolTools/latex/boxeps.doc
