@@ -1,4 +1,3 @@
-;;; -*- Mode:Lisp; Package:Weyli; Base:10; Lowercase:T; Syntax:Common-Lisp -*-
 ;;; ===========================================================================
 ;;;			      Univariate Polynomial Domain
 ;;; ===========================================================================
@@ -210,12 +209,13 @@
 (defun clist-plus (x y)
   (declare (type simple-array x y)
 	   (optimize (safety 0)))
-  (let ((x-deg (clist-degree x))
+o  (let ((x-deg (clist-degree x))
 	(y-deg (clist-degree y))
 	array
 	exp)
     (declare (fixnum x-deg y-deg)
-	     (type simple-array array))
+	     #+nil (type simple-array array)
+	     )
     (flet ((zipper-sum ()
 	     (loop for i downfrom exp
 		   while (not (cl:minusp i))
@@ -277,7 +277,8 @@
 	array
 	exp)
     (declare (fixnum x-deg y-deg)
-	     (type simple-array array))
+	     #+NIL (type simple-array array)
+	     )
     (flet ((zipper-sum ()
 	     (loop for i downfrom exp
 		   while (not (cl:minusp i))

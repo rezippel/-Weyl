@@ -1,4 +1,3 @@
-;;; -*- Mode:Lisp; Package:Weyli; Base:10; Lowercase:T; Syntax:Common-Lisp -*-
 ;;; ===========================================================================
 ;;;			         Numbers
 ;;; ===========================================================================
@@ -846,7 +845,7 @@
 		 (y-domain (domain-of .y.)))
 	     (cond ((eql x-domain y-domain)
 		    (when (eql (class-of .x.) (class-of .y.))
-		      (error "No applicable ~A method for ~S and ~S" .x. .y.))
+		      (error "No applicable ~A method for ~S and ~S" binary-op .x. .y.))
 		    (with-contagion (.x. .y.) (,binary-op .x. .y.)))
 		   ((typep (domain-of .x.) 'non-strict-domain)
 		    (,binary-op .x. (coerce .y. (domain-of .x.))))

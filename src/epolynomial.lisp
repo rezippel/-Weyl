@@ -1,4 +1,3 @@
-;;; -*- Mode:Lisp; Package:Weyli; Base:10; Lowercase:T; Syntax:Common-Lisp -*-
 ;;; ===========================================================================
 ;;;			      Expanded Polynomials
 ;;; ===========================================================================
@@ -123,13 +122,13 @@
 	 (make-comparison-fun num-vars
 			      (loop for i fixnum below num-vars
 				    collect (cl:1+ i))
-			      :total? t :reverse nil))
+			      :total? t :reverse? nil))
 	((eql name :total-revlex)
 	 (make-comparison-fun num-vars
 			      (reverse 
 				(loop for i fixnum below num-vars
 				      collect (cl:1+ i)))
-			      :total? t :reverse t))
+			      :total? t :reverse? t))
 	(t (error "Unknown comparison function ~S" name))))
 
 (defun make-comparison-fun (num-vars var-order &key total? reverse? new?)
@@ -216,12 +215,12 @@
     ,@body))
 
 (defun make-eterm (exp coef)
-  (declare (type simple-array exp)
-	   (optimize (safety 0)))
+  (declare (optimize (safety 0)))
   (let* ((dim (array-dimension exp 0))
 	 (term (make-array dim)))
     (declare (fixnum dim)
-	     (type simple-array term))
+	     #+NIL (type simple-array term)
+	     )
     (setf (svref term 0) coef)
     (do ((i 1 (cl:1+ i)))
 	((cl:> i dim) term)

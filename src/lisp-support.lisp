@@ -1,4 +1,3 @@
-;;; -*- Mode:Lisp; Package:User; Base:10; Lowercase:T; Syntax:Common-Lisp -*-
 ;;; ===========================================================================
 ;;;				  Lisp Support
 ;;; ===========================================================================
@@ -236,7 +235,9 @@
 
 #+SBCL
 (defmacro general-set-aref (value array indices)
-  `(apply #'SB-kernel:%ASET ,array (append ',indices '(,value))))
+  ;; `(apply #'SB-kernel:%ASET ,array (append ',indices '(,value)))
+  `(apply  #'(setf aref) (cons ,value (cons ,array ,indices)))
+  )
 
 #+Lispworks
 (defmacro general-set-aref (value array indices)
